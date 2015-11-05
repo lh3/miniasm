@@ -19,8 +19,19 @@ double sys_realtime()
 	return (tp.tv_sec + tp.tv_usec * 1e-6) - realtime0;
 }
 
+void sys_liftrlimit()
+{
+#ifdef __linux__
+	struct rlimit r;
+	getrlimit(RLIMIT_AS, &r);
+	r.rlim_cur = r.rlim_max;
+	setrlimit(RLIMIT_AS, &r);
+#endif
+}
+
 void sys_init()
 {
+	sys_liftrlimit();
 	realtime0 = sys_realtime();
 }
 

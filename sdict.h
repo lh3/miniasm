@@ -3,14 +3,6 @@
 
 #include <stdint.h>
 
-#ifndef KSTRING_T
-#define KSTRING_T kstring_t
-typedef struct __kstring_t {
-	size_t l, m;
-	char *s;
-} kstring_t;
-#endif
-
 typedef struct {
 	char *name;
 	uint32_t len, aux;

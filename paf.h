@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifndef KSTRING_T
+#define KSTRING_T kstring_t
+typedef struct __kstring_t {
+	size_t l, m;
+	char *s;
+} kstring_t;
+#endif
+
 typedef struct {
 	void *fp;
 	kstring_t buf;
