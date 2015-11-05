@@ -101,7 +101,7 @@ ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a)
 	}
 	free(c.a); free(b.a);
 	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld hits remain after cut\n", __func__, sys_timestamp(), n_remained);
+		fprintf(stderr, "[M::%s::%s] %ld query sequences remain after cut\n", __func__, sys_timestamp(), n_remained);
 	return sub;
 }
 
@@ -133,5 +133,29 @@ size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a)
 			a[m++] = *p;
 		}
 	}
+	if (ma_verbose >= 3)
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after cut\n", __func__, sys_timestamp(), m);
+	return m;
+}
+
+size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a)
+{
+	size_t i, m;
+	asg_arc_t t;
+	uint64_t tot_dp = 0, tot_len = 0;
+	int r, max_hang = opt->max_hang + (opt->max_hang>>1), min_ovlp = opt->min_ovlp / 2;
+	for (i = m = 0; i < n; ++i) {
+		ma_hit_t *h = &a[i];
+		const ma_sub_t *sq = &sub[h->qns>>32], *st = &sub[h->tn];
+		if (sq->del || st->del) continue;
+		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, max_hang, .5, min_ovlp, &t);
+		if (r >= 0 || r == MA_HT_QCONT || r == MA_HT_TCONT)
+			a[m++] = *h, tot_dp += h->qe - (uint32_t)h->qns;
+	}
+	for (i = 0; i <= m; ++i)
+		if (i == m || a[i].qns>>32 != a[i-1].qns>>32)
+			tot_len += sub[a[i-1].qns>>32].e - sub[a[i-1].qns>>32].s;
+	if (ma_verbose >= 3)
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after filtering; crude depth: %.2f\n", __func__, sys_timestamp(), m, (double)tot_dp / tot_len);
 	return m;
 }
