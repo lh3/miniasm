@@ -2,7 +2,7 @@ CC=			gcc
 CFLAGS=		-g -Wall -O2 -Wc++-compat -Wno-unused-function
 CPPFLAGS=
 INCLUDES=	-I.
-OBJS=		sys.o sdict.o paf.o asg.o common.o cut.o
+OBJS=		sys.o sdict.o paf.o asg.o common.o hit.o
 PROG=		miniasm
 LIBS=		-lm -lz -lpthread
 
@@ -24,8 +24,10 @@ depend:
 
 # DO NOT DELETE
 
-common.o: miniasm.h
-cut.o: sdict.h paf.h kvec.h miniasm.h ksort.h
-main.o: kvec.h sys.h paf.h sdict.h miniasm.h
+asg.o: asg.h kvec.h ksort.h
+asm.o: miniasm.h sdict.h asg.h kvec.h kseq.h
+common.o: miniasm.h sdict.h asg.h
+hit.o: sdict.h paf.h kvec.h sys.h miniasm.h asg.h ksort.h
+main.o: kvec.h sys.h paf.h sdict.h miniasm.h asg.h
 paf.o: paf.h kseq.h
 sdict.o: sdict.h khash.h
