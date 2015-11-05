@@ -13,18 +13,18 @@ KRADIX_SORT_INIT(hit, ma_hit_t, ma_hit_key, 8)
 
 KSORT_INIT_GENERIC(uint32_t)
 
-size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, const ma_reg_t *in, ma_reg_t *out)
+size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out)
 {
 	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
 	kvec_t(uint64_t) c = {0,0,0};
 	for (i = 1, last = 0; i <= n; ++i) {
-		if (i == n || a[i].qns>>32 != a[i-1].qns>>32) {
-			size_t start;
+		if (i == n || a[i].qns>>32 != a[i-1].qns>>32) { // we come to a new query sequence
+			size_t start = 0;
 			int dp, max_len, max_pos = -1, qid = a[i-1].qns>>32;
 			kv_resize(uint32_t, b, i - last);
 			b.n = 0;
-			for (j = last; j < i; ++j) {
+			for (j = last; j < i; ++j) { // collect all starts and ends
 				if (a[j].tn == qid) continue; // skip self match
 				kv_push(uint32_t, b, (uint32_t)a[j].qns<<1);
 				kv_push(uint32_t, b, a[j].qe<<1|1);

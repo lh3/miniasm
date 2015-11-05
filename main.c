@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	if (argc == optind) {
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
 		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "  Read pre-selection:\n");
+		fprintf(stderr, "  Preselection:\n");
 		fprintf(stderr, "    -m INT[,FLOAT]   min match length and fraction [%d,%.2f]\n", opt.min_match, opt.min_iden);
 		fprintf(stderr, "    -s INT           min span [%d]\n", opt.min_span);
 		fprintf(stderr, "    -d INT           min read depth [%d]\n", opt.min_dp);

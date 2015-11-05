@@ -41,6 +41,6 @@ const char *sys_timestamp()
 	double rt, ct;
 	rt = sys_realtime();
 	ct = sys_cputime();
-	snprintf(buf, 255, "%.3f*%.3f", rt, ct/rt);
+	snprintf(buf, 255, "%.3f*%.2f", rt, ct/rt);
 	return buf;
 }
