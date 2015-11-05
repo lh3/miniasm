@@ -6,6 +6,8 @@
 #include "kseq.h"
 KSTREAM_INIT(gzFile, gzread, 0x10000)
 
+int paf_verbose = 3;
+
 paf_file_t *paf_file_open(const char *fn)
 {
 	kstream_t *ks;
