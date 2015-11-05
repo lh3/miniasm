@@ -13,7 +13,7 @@ KRADIX_SORT_INIT(hit, ma_hit_t, ma_hit_key, 8)
 
 KSORT_INIT_GENERIC(uint32_t)
 
-size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out)
+size_t ma_hit_highcov(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out)
 {
 	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
@@ -47,7 +47,7 @@ size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t
 				out[qid].e = (uint32_t)c.a[max_pos];
 				out[qid].del = 0;
 				++n_remained;
-			} else out[qid].del = 1;
+			} else out[qid].del = 1, out[qid].s = out[qid].e = 0;
 			last = i;
 		}
 	}
@@ -58,4 +58,35 @@ size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t
 void ma_hit_sort(size_t n, ma_hit_t *a)
 {
 	radix_sort_hit(a, a + n);
+}
+
+size_t ma_hit_cut(const ma_reg_t *reg, int min_span, size_t n, ma_hit_t *a)
+{
+	size_t i, m;
+	for (i = m = 0; i < n; ++i) {
+		ma_hit_t *p = &a[i];
+		const ma_reg_t *rq = &reg[p->qns>>32], *rt = &reg[p->tn];
+		int qs, qe, ts, te;
+		if (rq->del || rt->del) continue;
+		if (p->rev) {
+			qs = p->te < rt->e? (uint32_t)p->qns : (uint32_t)p->qns + (p->te - rt->e);
+			qe = p->ts > rt->s? p->qe : p->qe - (rt->s - p->ts);
+			ts = p->qe < rq->e? p->ts : p->ts + (p->qe - rq->e);
+			te = (uint32_t)p->qns > rq->s? p->te : p->te - (rq->s - (uint32_t)p->qns);
+		} else {
+			qs = p->ts > rt->s? (uint32_t)p->qns : (uint32_t)p->qns + (rt->s - p->ts);
+			qe = p->te < rt->e? p->qe : p->qe - (p->te - rt->e);
+			ts = (uint32_t)p->qns > rq->s? p->ts : p->ts + (rq->s - (uint32_t)p->qns);
+			te = p->qe < rq->e? p->te : p->te - (p->qe - rq->e);
+		}
+		qs = (qs > rq->s? qs : rq->s) - rq->s;
+		qe = (qe < rq->e? qe : rq->e) - rq->s;
+		ts = (ts > rt->s? ts : rt->s) - rt->s;
+		te = (te < rt->e? te : rt->e) - rt->s;
+		if (qe - qs >= min_span && te - ts >= min_span) {
+			p->qns = p->qns>>32<<32 | qs, p->qe = qe, p->ts = ts, p->te = te;
+			a[m++] = *p;
+		}
+	}
+	return m;
 }

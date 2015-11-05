@@ -68,9 +68,20 @@ int main(int argc, char *argv[])
 
 	ma_hit_sort(h.n, h.a);
 	reg = (ma_reg_t*)malloc(d->n_seq * sizeof(ma_reg_t));
-	tot = ma_hit_cut(d, opt.min_dp, h.n, h.a, 0, reg);
+	tot = ma_hit_highcov(d, opt.min_dp, h.n, h.a, reg);
 	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld sequences remain after coverage-based cut\n", __func__, sys_timestamp(), tot);
+		fprintf(stderr, "[M::%s::%s] %ld sequences remain after coverage-based filter\n", __func__, sys_timestamp(), tot);
+
+	h.n = ma_hit_cut(reg, opt.min_span, h.n, h.a);
+	h.a = (ma_hit_t*)realloc(h.a, h.n * sizeof(ma_hit_t));
+	if (ma_verbose >= 3)
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after cut\n", __func__, sys_timestamp(), h.n);
+	for (i = 0; i < h.n; ++i) {
+		ma_hit_t *p = &h.a[i];
+		ma_reg_t *rq = &reg[p->qns>>32], *rt = &reg[p->tn];
+		printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
+				"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te);
+	}
 
 	free(h.a);
 	sd_destroy(d);

@@ -30,8 +30,9 @@ extern "C" {
 #endif
 
 void ma_opt_init(ma_opt_t *opt);
-size_t ma_hit_cut(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out);
+size_t ma_hit_highcov(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out);
 void ma_hit_sort(size_t n, ma_hit_t *a);
+size_t ma_hit_cut(const ma_reg_t *reg, int min_span, size_t n, ma_hit_t *a);
 
 #ifdef __cplusplus
 }
