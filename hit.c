@@ -150,7 +150,7 @@ size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *
 		if (sq->del || st->del) continue;
 		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, max_hang, .5, min_ovlp, &t);
 		if (r >= 0 || r == MA_HT_QCONT || r == MA_HT_TCONT)
-			a[m++] = *h, tot_dp += h->qe - (uint32_t)h->qns;
+			a[m++] = *h, tot_dp += r >= 0? r : r == MA_HT_QCONT? sq->e - sq->s : st->e - st->s;
 	}
 	for (i = 0; i <= m; ++i)
 		if (i == m || a[i].qns>>32 != a[i-1].qns>>32)
