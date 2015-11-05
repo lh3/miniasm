@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	ma_sub_t *sub;
 	ma_hit_t *hit;
 	size_t n_hits;
+	asg_arc_t ta;
 
 	ma_opt_init(&opt);
 	while ((c = getopt(argc, argv, "m:s:d:")) >= 0) {
@@ -44,14 +45,16 @@ int main(int argc, char *argv[])
 	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
 	sub = ma_hit_sub(opt.min_dp, n_hits, hit);
 	n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
-	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
 	for (i = 0; i < n_hits; ++i) {
 		ma_hit_t *p = &hit[i];
 		ma_sub_t *rq = &sub[p->qns>>32], *rt = &sub[p->tn];
-		printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
-				"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te);
+		int r = ma_hit2arc(p, rq->e - rq->s, rt->e - rt->s, opt.max_hang * 1.5, .5, opt.min_ovlp, &ta);
+		if (r >= 0 || r == MA_HT_QCONT || r == MA_HT_TCONT || r == MA_HT_SHORT_OVLP)
+			printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
+					"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te);
 	}
+	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
 	free(sub);
 	free(hit);
