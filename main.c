@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
 	ma_hit_t *hit;
 	size_t n_hits;
 	asg_arc_t ta;
+	float cov;
 
 	ma_opt_init(&opt);
 	while ((c = getopt(argc, argv, "m:s:d:")) >= 0) {
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
 	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
 	sub = ma_hit_sub(opt.min_dp, n_hits, hit);
 	n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
-	n_hits = ma_hit_flt(sub, &opt, n_hits, hit);
+	n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
 
 	for (i = 0; i < n_hits; ++i) {
 		ma_hit_t *p = &hit[i];

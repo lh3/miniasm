@@ -138,7 +138,7 @@ size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a)
 	return m;
 }
 
-size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a)
+size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a, float *cov)
 {
 	size_t i, m;
 	asg_arc_t t;
@@ -155,7 +155,8 @@ size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *
 	for (i = 0; i <= m; ++i)
 		if (i == m || a[i].qns>>32 != a[i-1].qns>>32)
 			tot_len += sub[a[i-1].qns>>32].e - sub[a[i-1].qns>>32].s;
+	*cov = (double)tot_dp / tot_len;
 	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld hits remain after filtering; crude depth: %.2f\n", __func__, sys_timestamp(), m, (double)tot_dp / tot_len);
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after filtering; crude depth: %.2f\n", __func__, sys_timestamp(), m, *cov);
 	return m;
 }
