@@ -27,18 +27,12 @@ typedef struct {
 extern "C" {
 #endif
 
-paf_file_t *paf_file_open(const char *fn);
-int paf_file_close(paf_file_t *pf);
-int paf_file_read(paf_file_t *pf, paf_rec_t *r);
+paf_file_t *paf_open(const char *fn);
+int paf_close(paf_file_t *pf);
+int paf_read(paf_file_t *pf, paf_rec_t *r);
 
 #ifdef __cplusplus
 }
 #endif
 
-static inline int paf_rec_isflt(const paf_rec_t *r, int min_span, int min_match, float min_frac)
-{
-	if (r->qe - r->qs < min_span || r->te - r->ts < min_span) return 1;
-	if (r->ml < min_match || r->ml < r->bl * min_frac) return 1;
-	return 0;
-}
 #endif

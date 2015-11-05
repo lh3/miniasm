@@ -6,9 +6,7 @@
 #include "kseq.h"
 KSTREAM_INIT(gzFile, gzread, 0x10000)
 
-int paf_verbose = 3;
-
-paf_file_t *paf_file_open(const char *fn)
+paf_file_t *paf_open(const char *fn)
 {
 	kstream_t *ks;
 	gzFile fp;
@@ -21,7 +19,7 @@ paf_file_t *paf_file_open(const char *fn)
 	return pf;
 }
 
-int paf_file_close(paf_file_t *pf)
+int paf_close(paf_file_t *pf)
 {
 	kstream_t *ks;
 	if (pf == 0) return 0;
@@ -57,7 +55,7 @@ int paf_parse(int l, char *s, paf_rec_t *pr) // s must be NULL terminated
 	return 0;
 }
 
-int paf_file_read(paf_file_t *pf, paf_rec_t *r)
+int paf_read(paf_file_t *pf, paf_rec_t *r)
 {
 	int ret, dret;
 file_read_more:
