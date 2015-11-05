@@ -5,6 +5,7 @@
 #include "sdict.h"
 #include "paf.h"
 #include "kvec.h"
+#include "sys.h"
 #include "miniasm.h"
 
 #include "ksort.h"
@@ -13,11 +14,58 @@ KRADIX_SORT_INIT(hit, ma_hit_t, ma_hit_key, 8)
 
 KSORT_INIT_GENERIC(uint32_t)
 
-size_t ma_hit_highcov(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_reg_t *out)
+void ma_hit_sort(size_t n, ma_hit_t *a)
 {
-	size_t i, j, last, n_remained = 0;
+	radix_sort_hit(a, a + n);
+}
+
+static inline int paf_rec_isflt(const paf_rec_t *r, int min_span, int min_match, float min_frac)
+{
+	if (r->qe - r->qs < min_span || r->te - r->ts < min_span) return 1;
+	if (r->ml < min_match || r->ml < r->bl * min_frac) return 1;
+	return 0;
+}
+
+ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n)
+{
+	paf_file_t *fp;
+	paf_rec_t r;
+	ma_hit_v h = {0,0,0};
+	size_t tot = 0;
+
+	fp = paf_open(fn);
+	while (paf_read(fp, &r) >= 0) {
+		ma_hit_t *p;
+		++tot;
+		if (paf_rec_isflt(&r, opt->min_span, opt->min_match, opt->min_iden))
+			continue;
+		kv_pushp(ma_hit_t, h, &p);
+		p->qns = (uint64_t)sd_put(d, r.qn, r.ql)<<32 | r.qs;
+		p->qe = r.qe;
+		p->tn = sd_put(d, r.tn, r.tl);
+		p->ts = r.ts, p->te = r.te, p->rev = r.rev;
+	}
+	paf_close(fp);
+	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] read %ld hits; stored %ld hits and %d sequences\n", __func__, sys_timestamp(), tot, h.n, d->n_seq);
+	ma_hit_sort(h.n, h.a);
+	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] sorted hits\n", __func__, sys_timestamp());
+	*n = h.n;
+	return h.a;
+}
+
+ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a)
+{
+	size_t i, j, last, n_sub = 0, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
 	kvec_t(uint64_t) c = {0,0,0};
+	ma_sub_t *sub = 0;
+
+	for (i = 0; i < n; ++i) {
+		n_sub = n_sub > a[i].qns>>32? n_sub : a[i].qns>>32;
+		n_sub = n_sub > a[i].tn? n_sub : a[i].tn;
+	}
+	++n_sub;
+	sub = (ma_sub_t*)calloc(n_sub, sizeof(ma_sub_t));
 	for (i = 1, last = 0; i <= n; ++i) {
 		if (i == n || a[i].qns>>32 != a[i-1].qns>>32) { // we come to a new query sequence
 			size_t start = 0;
@@ -43,29 +91,26 @@ size_t ma_hit_highcov(const sdict_t *pd, int min_dp, size_t n, ma_hit_t *a, ma_r
 				}
 			}
 			if (max_pos >= 0) {
-				out[qid].s = (uint32_t)(c.a[max_pos]>>32);
-				out[qid].e = (uint32_t)c.a[max_pos];
-				out[qid].del = 0;
+				sub[qid].s = (uint32_t)(c.a[max_pos]>>32);
+				sub[qid].e = (uint32_t)c.a[max_pos];
+				sub[qid].del = 0;
 				++n_remained;
-			} else out[qid].del = 1, out[qid].s = out[qid].e = 0;
+			} else sub[qid].del = 1, sub[qid].s = sub[qid].e = 0;
 			last = i;
 		}
 	}
 	free(c.a); free(b.a);
-	return n_remained;
+	if (ma_verbose >= 3)
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after cut\n", __func__, sys_timestamp(), n_remained);
+	return sub;
 }
 
-void ma_hit_sort(size_t n, ma_hit_t *a)
-{
-	radix_sort_hit(a, a + n);
-}
-
-size_t ma_hit_cut(const ma_reg_t *reg, int min_span, size_t n, ma_hit_t *a)
+size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a)
 {
 	size_t i, m;
 	for (i = m = 0; i < n; ++i) {
 		ma_hit_t *p = &a[i];
-		const ma_reg_t *rq = &reg[p->qns>>32], *rt = &reg[p->tn];
+		const ma_sub_t *rq = &reg[p->qns>>32], *rt = &reg[p->tn];
 		int qs, qe, ts, te;
 		if (rq->del || rt->del) continue;
 		if (p->rev) {

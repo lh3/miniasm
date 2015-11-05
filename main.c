@@ -10,24 +10,15 @@
 
 #define MA_VERSION "r1"
 
-static inline int paf_rec_isflt(const paf_rec_t *r, int min_span, int min_match, float min_frac)
-{
-	if (r->qe - r->qs < min_span || r->te - r->ts < min_span) return 1;
-	if (r->ml < min_match || r->ml < r->bl * min_frac) return 1;
-	return 0;
-}
-
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
 	int i, c;
-	paf_file_t *fp;
 	sdict_t *d;
-	paf_rec_t r;
 	char *s;
-	ma_hit_v h = {0,0,0};
-	ma_reg_t *reg;
-	size_t tot = 0;
+	ma_sub_t *sub;
+	ma_hit_t *hit;
+	size_t n_hits;
 
 	ma_opt_init(&opt);
 	while ((c = getopt(argc, argv, "m:s:d:")) >= 0) {
@@ -50,40 +41,20 @@ int main(int argc, char *argv[])
 	sys_init();
 	d = sd_init();
 
-	fp = paf_open(argv[optind]);
-	while (paf_read(fp, &r) >= 0) {
-		ma_hit_t *p;
-		++tot;
-		if (paf_rec_isflt(&r, opt.min_span, opt.min_match, opt.min_iden))
-			continue;
-		kv_pushp(ma_hit_t, h, &p);
-		p->qns = (uint64_t)sd_put(d, r.qn, r.ql)<<32 | r.qs;
-		p->qe = r.qe;
-		p->tn = sd_put(d, r.tn, r.tl);
-		p->ts = r.ts, p->te = r.te, p->rev = r.rev;
-	}
-	paf_close(fp);
-	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] read %ld hits; stored %ld hits and %d sequences\n", __func__, sys_timestamp(), tot, h.n, d->n_seq);
+	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
+	sub = ma_hit_sub(opt.min_dp, n_hits, hit);
+	n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
+	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
-	ma_hit_sort(h.n, h.a);
-	reg = (ma_reg_t*)malloc(d->n_seq * sizeof(ma_reg_t));
-	tot = ma_hit_highcov(d, opt.min_dp, h.n, h.a, reg);
-	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld sequences remain after coverage-based filter\n", __func__, sys_timestamp(), tot);
-
-	h.n = ma_hit_cut(reg, opt.min_span, h.n, h.a);
-	h.a = (ma_hit_t*)realloc(h.a, h.n * sizeof(ma_hit_t));
-	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld hits remain after cut\n", __func__, sys_timestamp(), h.n);
-	for (i = 0; i < h.n; ++i) {
-		ma_hit_t *p = &h.a[i];
-		ma_reg_t *rq = &reg[p->qns>>32], *rt = &reg[p->tn];
+	for (i = 0; i < n_hits; ++i) {
+		ma_hit_t *p = &hit[i];
+		ma_sub_t *rq = &sub[p->qns>>32], *rt = &sub[p->tn];
 		printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
 				"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te);
 	}
 
-	free(h.a);
+	free(sub);
+	free(hit);
 	sd_destroy(d);
 
 	fprintf(stderr, "[M::%s] Version: %s\n", __func__, MA_VERSION);
