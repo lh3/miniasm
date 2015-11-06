@@ -21,6 +21,7 @@ extern "C" {
 sdict_t *sd_init(void);
 void sd_destroy(sdict_t *d);
 int32_t sd_put(sdict_t *d, const char *name, uint32_t len);
+int32_t sd_get(const sdict_t *d, const char *name);
 int32_t *sd_squeeze(sdict_t *d);
 
 #ifdef __cplusplus

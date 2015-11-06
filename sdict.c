@@ -44,6 +44,28 @@ int32_t sd_put(sdict_t *d, const char *name, uint32_t len)
 	return kh_val(h, k);
 }
 
+int32_t sd_get(const sdict_t *d, const char *name)
+{
+	shash_t *h = (shash_t*)d->h;
+	khint_t k;
+	k = kh_get(str, h, name);
+	return k == kh_end(h)? -1 : kh_val(h, k);
+}
+
+void sd_hash(sdict_t *d)
+{
+	uint32_t i;
+	shash_t *h;
+	if (d->h) return;
+	d->h = h = kh_init(str);
+	for (i = 0; i < d->n_seq; ++i) {
+		int absent;
+		khint_t k;
+		k = kh_put(str, h, d->seq[i].name, &absent);
+		kh_val(h, k) = i;
+	}
+}
+
 int32_t *sd_squeeze(sdict_t *d)
 {
 	int32_t *map, i, j;
@@ -59,5 +81,6 @@ int32_t *sd_squeeze(sdict_t *d)
 		} else d->seq[j] = d->seq[i], map[i] = j++;
 	}
 	d->n_seq = j;
+	sd_hash(d);
 	return map;
 }

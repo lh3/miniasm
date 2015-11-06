@@ -1,6 +1,7 @@
 #ifndef MINIASM_H
 #define MINIASM_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include "sdict.h"
@@ -16,8 +17,12 @@ typedef struct {
 
 	int max_hang;
 	int min_ovlp;
-	int gap_fuzz;
 	float int_frac;
+
+	int gap_fuzz;
+	int bub_dist;
+	int max_ext;
+	float ovlp_drop_ratio;
 } ma_opt_t;
 
 typedef struct {
@@ -32,11 +37,6 @@ typedef struct { size_t n, m; ma_hit_t *a; } ma_hit_v;
 typedef struct {
 	uint32_t s:31, del:1, e;
 } ma_sub_t;
-
-typedef struct {
-	sdict_t *d;
-	asg_t *g;
-} ma_sg_t;
 
 typedef struct {
 	uint32_t len:31, circ:1; // len: length of the unitig; circ: circular if non-zero
@@ -64,6 +64,13 @@ size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a);
 size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a, float *cov);
 void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b);
 size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n, ma_hit_t *a);
+
+asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, size_t n_hits, const ma_hit_t *hit);
+void ma_sg_print(const asg_t *g, const sdict_t *d, const ma_sub_t *sub, FILE *fp);
+ma_ug_t *ma_ug_gen(asg_t *g);
+int ma_ug_seq(ma_ug_t *g, const sdict_t *d, const ma_sub_t *sub, const char *fn);
+void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE *fp);
+void ma_ug_destroy(ma_ug_t *ug);
 
 #ifdef __cplusplus
 }
