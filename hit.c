@@ -166,8 +166,39 @@ size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *
 void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b)
 {
 	size_t i;
-	for (i = 0; i < n_sub; ++i) {
-		a[i].s += b[i].s;
-		a[i].e = a[i].s + (b[i].e - b[i].s);
+	for (i = 0; i < n_sub; ++i)
+		a[i].e = a[i].s + b[i].e, a[i].s += b[i].s;
+}
+
+size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n, ma_hit_t *a)
+{
+	int32_t *map, r;
+	size_t i, m, old_n_seq = d->n_seq;
+	asg_arc_t t;
+	for (i = m = 0; i < n; ++i) {
+		ma_hit_t *h = &a[i];
+		ma_sub_t *sq = &sub[h->qns>>32], *st = &sub[h->tn];
+		if (sq->del || st->del) continue;
+		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, opt->max_hang, opt->int_frac, opt->min_ovlp, &t);
+		if (r == MA_HT_QCONT) sq->del = 1;
+		else if (r == MA_HT_TCONT) st->del = 1;
 	}
+	for (i = 0; i < d->n_seq; ++i)
+		if (sub[i].del) d->seq[i].del = 1;
+	map = sd_squeeze(d);
+	for (i = 0; i < old_n_seq; ++i)
+		if (map[i] >= 0) sub[map[i]] = sub[i];
+	for (i = m = 0; i < n; ++i) {
+		ma_hit_t *h = &a[i];
+		int32_t qn = map[h->qns>>32], tn = map[h->tn];
+		if (qn >= 0 && tn >= 0) {
+			a[i].qns = (uint64_t)qn<<32 | (uint32_t)a[i].qns;
+			a[i].tn = tn;
+			a[m++] = a[i];
+		}
+	}
+	free(map);
+	if (ma_verbose >= 3)
+		fprintf(stderr, "[M::%s::%s] %d sequences and %ld hits remain after containment removal\n", __func__, sys_timestamp(), d->n_seq, m);
+	return m;
 }

@@ -17,7 +17,7 @@ void sd_destroy(sdict_t *d)
 {
 	uint32_t i;
 	if (d == 0) return;
-	kh_destroy(str, (shash_t*)d->h);
+	if (d->h) kh_destroy(str, (shash_t*)d->h);
 	for (i = 0; i < d->n_seq; ++i)
 		free(d->seq[i].name);
 	free(d->seq);
@@ -42,4 +42,22 @@ int32_t sd_put(sdict_t *d, const char *name, uint32_t len)
 		kh_val(h, k) = d->n_seq++;
 	} // TODO: test if len is the same;
 	return kh_val(h, k);
+}
+
+int32_t *sd_squeeze(sdict_t *d)
+{
+	int32_t *map, i, j;
+	if (d->h) {
+		kh_destroy(str, (shash_t*)d->h);
+		d->h = 0;
+	}
+	map = (int32_t*)calloc(d->n_seq, 4);
+	for (i = j = 0; i < d->n_seq; ++i) {
+		if (d->seq[i].del) {
+			free(d->seq[i].name);
+			map[i] = -1;
+		} else d->seq[j] = d->seq[i], map[i] = j++;
+	}
+	d->n_seq = j;
+	return map;
 }
