@@ -1,7 +1,7 @@
 ## Getting Started
 
 ```sh
-# Install minimap and miniasm
+# Install minimap and miniasm (requiring gcc and zlib)
 git clone https://github.com/lh3/minimap && (cd minimap && make)
 git clone https://github.com/lh3/miniasm && (cd miniasm && make)
 # Overlapping
