@@ -37,6 +37,28 @@ sophisticated overlapers such as [MHAP][mhap] and [DALIGNER][daligner].
 Coupled with long-read error correctors and consensus tools, miniasm
 may also be useful to produce high-quality assemblies.
 
+## Algorithm Overview
+
+1. Crude read selection. For each read, find the longest contiguous region
+   covered by three good mappings. Get an approximate estimate of read
+   coverage.
+
+2. Fine read selection. Use the coverage information to find the good regions
+   again but with more stringent thresholds. Discard contained reads.
+
+3. Generate a [string graph][sg]. Prune tips, drop weak overlaps and collapse
+   short bubbles. These procedures are similar to those implemented in
+   short-read assemblers.
+
+4. Merge unambiguous overlaps to produce unitig sequences.
+
+## Limitations
+
+1) Consensus base quality is similar to input reads (may be fixed with a
+consensus tool). 2) Tested on high-coverage bacterial PacBio data only (that is
+for future if have time). 3) Prone to collapse repeats or segmental
+duplications longer than input reads (hard to fix with noisy reads).
+
 
 
 [unitig]: http://wgs-assembler.sourceforge.net/wiki/index.php/Celera_Assembler_Terminology
@@ -57,3 +79,4 @@ may also be useful to produce high-quality assemblies.
 [PB-deprecated]: https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-20kb-Size-Selected-Library-with-P6-C4
 [mhap]: https://github.com/marbl/MHAP
 [daligner]: https://github.com/thegenemyers/DALIGNER
+[sg]: http://bioinformatics.oxfordjournals.org/content/21/suppl_2/ii79.abstract
