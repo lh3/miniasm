@@ -54,10 +54,13 @@ may also be useful to produce high-quality assemblies.
 
 ## Limitations
 
-1) Consensus base quality is similar to input reads (may be fixed with a
-consensus tool). 2) Tested on high-coverage bacterial PacBio data only (that is
-for future if have time). 3) Prone to collapse repeats or segmental
-duplications longer than input reads (hard to fix with noisy reads).
+1. Consensus base quality is similar to input reads (may be fixed with a
+   consensus tool).
+
+2. Tested on 12 high-coverage bacterial PacBio data sets only.
+
+3. Prone to collapse repeats or segmental duplications longer than input reads
+   (hard to fix with noisy reads).
 
 
 
