@@ -56,7 +56,6 @@ ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, s
 		tot_len += d->seq[i].len;
 	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] read %ld hits; stored %ld hits and %d sequences (%ld bp)\n", __func__, sys_timestamp(), tot, h.n, d->n_seq, tot_len);
 	ma_hit_sort(h.n, h.a);
-	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] sorted hits\n", __func__, sys_timestamp());
 	*n = h.n;
 	return h.a;
 }
