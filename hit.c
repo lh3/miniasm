@@ -31,7 +31,7 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 	paf_file_t *fp;
 	paf_rec_t r;
 	ma_hit_v h = {0,0,0};
-	size_t tot = 0;
+	size_t i, tot = 0, tot_len = 0;
 
 	fp = paf_open(fn);
 	while (paf_read(fp, &r) >= 0) {
@@ -46,7 +46,9 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 		p->ts = r.ts, p->te = r.te, p->rev = r.rev;
 	}
 	paf_close(fp);
-	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] read %ld hits; stored %ld hits and %d sequences\n", __func__, sys_timestamp(), tot, h.n, d->n_seq);
+	for (i = 0; i < d->n_seq; ++i)
+		tot_len += d->seq[i].len;
+	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] read %ld hits; stored %ld hits and %d sequences (%ld bp)\n", __func__, sys_timestamp(), tot, h.n, d->n_seq, tot_len);
 	ma_hit_sort(h.n, h.a);
 	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] sorted hits\n", __func__, sys_timestamp());
 	*n = h.n;
@@ -101,7 +103,7 @@ ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a)
 	}
 	free(c.a); free(b.a);
 	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld query sequences remain after cut\n", __func__, sys_timestamp(), n_remained);
+		fprintf(stderr, "[M::%s::%s] %ld query sequences remain after sub\n", __func__, sys_timestamp(), n_remained);
 	return sub;
 }
 
@@ -152,7 +154,7 @@ size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *
 		if (r >= 0 || r == MA_HT_QCONT || r == MA_HT_TCONT)
 			a[m++] = *h, tot_dp += r >= 0? r : r == MA_HT_QCONT? sq->e - sq->s : st->e - st->s;
 	}
-	for (i = 0; i <= m; ++i)
+	for (i = 1; i <= m; ++i)
 		if (i == m || a[i].qns>>32 != a[i-1].qns>>32)
 			tot_len += sub[a[i-1].qns>>32].e - sub[a[i-1].qns>>32].s;
 	*cov = (double)tot_dp / tot_len;
