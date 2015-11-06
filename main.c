@@ -32,16 +32,16 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100;
+	int i, c, stage = 100, no_first = 0, no_second = 0;
 	sdict_t *d;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
 	size_t n_hits;
 	float cov;
-	char *fn_reads = 0, *outfmt = 0;
+	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "m:s:c:S:i:d:g:o:h:I:r:f:e:p:")) >= 0) {
+	while ((c = getopt(argc, argv, "m:s:c:S:i:d:g:o:h:I:r:f:e:p:12")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -56,6 +56,8 @@ int main(int argc, char *argv[])
 		else if (c == 'e') opt.max_ext = atoi(optarg);
 		else if (c == 'f') fn_reads = optarg;
 		else if (c == 'p') outfmt = optarg;
+		else if (c == '1') no_first = 1;
+		else if (c == '2') no_second = 1;
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
@@ -75,41 +77,55 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -r FLOAT    overlap drop ratio [%.2f]\n", opt.ovlp_drop_ratio);
 		fprintf(stderr, "    -e INT      small unitig threshold [%d]\n", opt.max_ext);
 		fprintf(stderr, "    -f FILE     read sequences []\n");
+		fprintf(stderr, "  Output:\n");
+		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
+		fprintf(stderr, "    -1          skip 1-pass read selection\n");
+		fprintf(stderr, "    -2          skip 2-pass read selection\n");
 		return 1;
 	}
 
 	sys_init();
 	d = sd_init();
 
+	fprintf(stderr, "[M::%s] ===> Step 1: reading read mappings <===\n", __func__);
 	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits);
 
-	// first-round filtering
-	if (stage >= 2) {
-		sub = ma_hit_sub(opt.min_dp, opt.min_iden, 0, n_hits, hit, d->n_seq);
-		n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
+	if (!no_first) {
+		fprintf(stderr, "[M::%s] ===> Step 2: 1-pass (crude) read selection <===\n", __func__);
+		if (stage >= 2) {
+			sub = ma_hit_sub(opt.min_dp, opt.min_iden, 0, n_hits, hit, d->n_seq);
+			n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
+		}
+		if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
+	} else {
+		sub = (ma_sub_t*)calloc(d->n_seq, sizeof(ma_sub_t));
+		for (i = 0; i < d->n_seq; ++i) sub[i].e = d->seq[i].len;
 	}
-	if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
 
-	// second-round filtering
-	if (stage >= 4) {
-		ma_sub_t *sub2;
-		sub2 = ma_hit_sub((int)(cov * .15 + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
-		n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
-		ma_sub_merge(d->n_seq, sub, sub2);
-		free(sub2);
+	if (!no_second) {
+		fprintf(stderr, "[M::%s] ===> Step 3: 2-pass (fine) read selection <===\n", __func__);
+		if (stage >= 4) {
+			ma_sub_t *sub2;
+			sub2 = ma_hit_sub((int)(cov * .15 + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
+			n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
+			ma_sub_merge(d->n_seq, sub, sub2);
+			free(sub2);
+		}
+		if (stage >= 5) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
 	}
-	if (stage >= 5) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
+
 	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
 	// assembly
-	if (outfmt != 0 && strcmp(outfmt, "bed") == 0) {
+	if (strcmp(outfmt, "bed") == 0) {
 		print_subs(d, sub);
-	} else if (outfmt != 0 && strcmp(outfmt, "paf") == 0) {
+	} else if (strcmp(outfmt, "paf") == 0) {
 		print_hits(n_hits, hit, d, sub);
-	} if (outfmt == 0 || strcmp(outfmt, "ug") == 0 || strcmp(outfmt, "sg") == 0) {
+	} if (strcmp(outfmt, "ug") == 0 || strcmp(outfmt, "sg") == 0) {
 		asg_t *sg = 0;
 		ma_ug_t *ug = 0;
 
+		fprintf(stderr, "[M::%s] ===> Step 4: graph cleaning <===\n", __func__);
 		sg = ma_sg_gen(&opt, d, sub, n_hits, hit);
 		asg_arc_del_trans(sg, opt.gap_fuzz);
 		asg_pop_bubble(sg, opt.bub_dist);
@@ -119,7 +135,8 @@ int main(int argc, char *argv[])
 		for (i = 0; i < 3; ++i)
 			asg_cut_short_utg(sg, opt.max_ext, 1);
 
-		if (outfmt == 0 || strcmp(outfmt, "ug") == 0) {
+		if (strcmp(outfmt, "ug") == 0) {
+			fprintf(stderr, "[M::%s] ===> Step 5: generating unitig graph <===\n", __func__);
 			ug = ma_ug_gen(sg);
 			if (fn_reads) ma_ug_seq(ug, d, sub, fn_reads);
 			ma_ug_print(ug, d, sub, stdout);
