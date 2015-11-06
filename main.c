@@ -44,11 +44,12 @@ int main(int argc, char *argv[])
 	d = sd_init();
 
 	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
-	sub = ma_hit_sub(opt.min_dp, n_hits, hit, d->n_seq);
+	sub = ma_hit_sub(opt.min_dp, 0, n_hits, hit, d->n_seq);
 	n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
 	n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
 
-	sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, n_hits, hit, d->n_seq);
+	sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, opt.min_span/2, n_hits, hit, d->n_seq);
+	n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 	ma_sub_merge(d->n_seq, sub, sub2);
 	free(sub2);
 

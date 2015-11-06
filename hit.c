@@ -55,7 +55,7 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 	return h.a;
 }
 
-ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a, size_t n_sub)
+ma_sub_t *ma_hit_sub(int min_dp, int end_clip, size_t n, const ma_hit_t *a, size_t n_sub)
 {
 	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
@@ -70,9 +70,13 @@ ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a, size_t n_sub)
 			kv_resize(uint32_t, b, i - last);
 			b.n = 0;
 			for (j = last; j < i; ++j) { // collect all starts and ends
+				uint32_t qs, qe;
 				if (a[j].tn == qid) continue; // skip self match
-				kv_push(uint32_t, b, (uint32_t)a[j].qns<<1);
-				kv_push(uint32_t, b, a[j].qe<<1|1);
+				qs = (uint32_t)a[j].qns + end_clip, qe = a[j].qe - end_clip;
+				if (qe > qs) {
+					kv_push(uint32_t, b, qs<<1);
+					kv_push(uint32_t, b, qe<<1|1);
+				}
 			}
 			ks_introsort_uint32_t(b.n, b.a);
 			for (j = c.n = 0, dp = 0, max_len = 0; j < b.n; ++j) {
@@ -88,11 +92,12 @@ ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a, size_t n_sub)
 				}
 			}
 			if (max_pos >= 0) {
-				sub[qid].s = (uint32_t)(c.a[max_pos]>>32);
-				sub[qid].e = (uint32_t)c.a[max_pos];
+				assert(qid < n_sub);
+				sub[qid].s = (uint32_t)(c.a[max_pos]>>32) - end_clip;
+				sub[qid].e = (uint32_t)c.a[max_pos] + end_clip;
 				sub[qid].del = 0;
 				++n_remained;
-			} else sub[qid].del = 1, sub[qid].s = sub[qid].e = 0;
+			} else sub[qid].del = 1;
 			last = i;
 		}
 	}
