@@ -24,8 +24,8 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 	for (i = 0; i < n_hits; ++i) {
 		const ma_hit_t *p = &hit[i];
 		const ma_sub_t *rq = &sub[p->qns>>32], *rt = &sub[p->tn];
-		printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\t100\t1000\t255\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
-				"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te);
+		printf("%s:%d-%d\t%d\t%d\t%d\t%c\t%s:%d-%d\t%d\t%d\t%d\t%d\t%d\t255\n", d->seq[p->qns>>32].name, rq->s + 1, rq->e, rq->e - rq->s, (uint32_t)p->qns, p->qe,
+				"+-"[p->rev], d->seq[p->tn].name, rt->s + 1, rt->e, rt->e - rt->s, p->ts, p->te, p->ml, p->bl);
 	}
 }
 
@@ -64,11 +64,11 @@ int main(int argc, char *argv[])
 	sys_init();
 	d = sd_init();
 
-	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
+	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits);
 
 	// first-round filtering
 	if (stage >= 2) {
-		sub = ma_hit_sub(opt.min_dp, 0, n_hits, hit, d->n_seq);
+		sub = ma_hit_sub(opt.min_dp, opt.min_iden, 0, n_hits, hit, d->n_seq);
 		n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
 	}
 	if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	// second-round filtering
 	if (second_flt && stage >= 4) {
 		ma_sub_t *sub2;
-		sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, opt.min_span/2, n_hits, hit, d->n_seq);
+		sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 		n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 		ma_sub_merge(d->n_seq, sub, sub2);
 		free(sub2);

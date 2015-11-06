@@ -33,14 +33,7 @@ void ma_hit_mark_unused(sdict_t *d, int n, const ma_hit_t *a)
 	}
 }
 
-static inline int paf_rec_isflt(const paf_rec_t *r, int min_span, int min_match, float min_frac)
-{
-	if (r->qe - r->qs < min_span || r->te - r->ts < min_span) return 1;
-	if (r->ml < min_match || r->ml < r->bl * min_frac) return 1;
-	return 0;
-}
-
-ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n)
+ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n)
 {
 	paf_file_t *fp;
 	paf_rec_t r;
@@ -51,13 +44,12 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 	while (paf_read(fp, &r) >= 0) {
 		ma_hit_t *p;
 		++tot;
-		if (paf_rec_isflt(&r, opt->min_span, opt->min_match, opt->min_iden))
-			continue;
+		if (r.qe - r.qs < min_span || r.te - r.ts < min_span || r.ml < min_match) continue;
 		kv_pushp(ma_hit_t, h, &p);
 		p->qns = (uint64_t)sd_put(d, r.qn, r.ql)<<32 | r.qs;
 		p->qe = r.qe;
 		p->tn = sd_put(d, r.tn, r.tl);
-		p->ts = r.ts, p->te = r.te, p->rev = r.rev;
+		p->ts = r.ts, p->te = r.te, p->rev = r.rev, p->ml = r.ml, p->bl = r.bl;
 	}
 	paf_close(fp);
 	for (i = 0; i < d->n_seq; ++i)
@@ -69,7 +61,7 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 	return h.a;
 }
 
-ma_sub_t *ma_hit_sub(int min_dp, int end_clip, size_t n, const ma_hit_t *a, size_t n_sub)
+ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const ma_hit_t *a, size_t n_sub)
 {
 	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
@@ -85,7 +77,7 @@ ma_sub_t *ma_hit_sub(int min_dp, int end_clip, size_t n, const ma_hit_t *a, size
 			b.n = 0;
 			for (j = last; j < i; ++j) { // collect all starts and ends
 				uint32_t qs, qe;
-				if (a[j].tn == qid) continue; // skip self match
+				if (a[j].tn == qid || a[j].ml < a[j].bl * min_iden) continue; // skip self match
 				qs = (uint32_t)a[j].qns + end_clip, qe = a[j].qe - end_clip;
 				if (qe > qs) {
 					kv_push(uint32_t, b, qs<<1);

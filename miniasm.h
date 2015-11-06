@@ -22,9 +22,9 @@ typedef struct {
 
 typedef struct {
 	uint64_t qns;
-	uint32_t tn:31, del:1;
-	uint32_t ts:31, rev:1;
-	uint32_t qe, te;
+	uint32_t qe, tn, ts, te;
+	uint32_t ml:31, rev:1;
+	uint32_t bl:31, del:1;
 } ma_hit_t;
 
 typedef struct { size_t n, m; ma_hit_t *a; } ma_hit_v;
@@ -58,8 +58,8 @@ extern "C" {
 #endif
 
 void ma_opt_init(ma_opt_t *opt);
-ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n);
-ma_sub_t *ma_hit_sub(int min_dp, int end_clip, size_t n, const ma_hit_t *a, size_t n_sub);
+ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n);
+ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const ma_hit_t *a, size_t n_sub);
 size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a);
 size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a, float *cov);
 void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b);
