@@ -3,7 +3,7 @@ CFLAGS=		-g -Wall -O2 -Wc++-compat -Wno-unused-function
 CPPFLAGS=
 INCLUDES=	-I.
 OBJS=		sys.o sdict.o paf.o asg.o common.o hit.o asm.o
-PROG=		miniasm
+PROG=		miniasm minidot
 LIBS=		-lm -lz -lpthread
 
 .SUFFIXES:.c .o
@@ -14,6 +14,9 @@ LIBS=		-lm -lz -lpthread
 all:$(PROG)
 
 miniasm:$(OBJS) main.o
+		$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+
+minidot:paf.o sdict.o dotter.o
 		$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 clean:
@@ -27,6 +30,7 @@ depend:
 asg.o: asg.h kvec.h ksort.h
 asm.o: miniasm.h sdict.h asg.h kvec.h kdq.h kseq.h
 common.o: miniasm.h sdict.h asg.h
+dotter.o: paf.h sdict.h kvec.h eps.h ksort.h
 hit.o: sdict.h paf.h kvec.h sys.h miniasm.h asg.h ksort.h
 main.o: kvec.h sys.h paf.h sdict.h miniasm.h asg.h
 paf.o: paf.h kseq.h
