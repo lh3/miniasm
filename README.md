@@ -11,7 +11,7 @@ miniasm/miniasm -f reads.fa reads.paf.gz > reads.gfa
 ```
 Example datasets: [PB-151103][PB-151103] and [ERS743109][ERS743109]. If you
 are not familiar with PacBio, you can extract ERS743109 reads in the fasta
-format with the following procedure:
+format with the following procedure, which will take much longer than assembly:
 ```sh
 seq 3 | xargs -i wget -O {}.bax.h5 ftp://ftp.sra.ebi.ac.uk/vol1/ERA472/ERA472339/pacbio_hdf5/m150622_205359_00127_c100790292550000001823177509091575_s1_p0.{}.bax.h5
 wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta
