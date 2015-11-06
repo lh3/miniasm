@@ -32,30 +32,28 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100, second_flt = 1, bed_out = 0;
+	int i, c, stage = 100, bed_out = 0;
 	sdict_t *d;
-	char *s;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
 	size_t n_hits;
 	float cov;
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "m:s:d:S:2B")) >= 0) {
-		if (c == 'm') {
-			opt.min_match = strtol(optarg, &s, 10);
-			if (*s == ',') opt.min_iden = strtod(s + 1, &s);
-		} else if (c == 's') opt.min_span = atoi(optarg);
+	while ((c = getopt(argc, argv, "m:s:d:S:i:B")) >= 0) {
+		if (c == 'm') opt.min_match = atoi(optarg);
+		else if (c == 'i') opt.min_iden = atof(optarg);
+		else if (c == 's') opt.min_span = atoi(optarg);
 		else if (c == 'd') opt.min_dp = atoi(optarg);
 		else if (c == 'S') stage = atoi(optarg);
-		else if (c == '2') second_flt = 0;
 		else if (c == 'B') bed_out = 1;
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Preselection:\n");
-		fprintf(stderr, "    -m INT[,FLOAT]   min match length and fraction [%d,%.2f]\n", opt.min_match, opt.min_iden);
+		fprintf(stderr, "    -m INT           min match length [%d]\n", opt.min_match);
+		fprintf(stderr, "    -i FLOAT         min identity [%.2f]\n", opt.min_iden);
 		fprintf(stderr, "    -s INT           min span [%d]\n", opt.min_span);
 		fprintf(stderr, "    -d INT           min read depth [%d]\n", opt.min_dp);
 		return 1;
@@ -74,9 +72,9 @@ int main(int argc, char *argv[])
 	if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
 
 	// second-round filtering
-	if (second_flt && stage >= 4) {
+	if (stage >= 4) {
 		ma_sub_t *sub2;
-		sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
+		sub2 = ma_hit_sub((int)(cov * .15 + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 		n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 		ma_sub_merge(d->n_seq, sub, sub2);
 		free(sub2);
