@@ -20,14 +20,22 @@ concatenates pieces of read sequences to generate the final [unitig][unitig]
 sequences. Thus the per-base error rate is similar to the raw input reads.
 
 So far miniasm is in very early development stage. It has only been tested on
-twelve bacterial genomes. Including the mapping step, it takes about 3 minutes
-to assmble a bacterial genome. Under the default setting, miniasm assembles 5
-out of 12 datasets into a single contig. The 12 data sets are [PacBio E. coli
-sample][PB-151103], [ERS473430][ERS473430], [ERS544009][ERS544009],
-[ERS554120][ERS554120], [ERS605484][ERS605484], [ERS617393][ERS617393],
-[ERS646601][ERS646601], [ERS659581][ERS659581], [ERS670327][ERS670327],
-[ERS685285][ERS685285], [ERS743109][ERS743109] and a [deprecated PacBio E. coli
-sample][PB-deprecated].
+twelve bacterial genomes sequenced with PacBio. Including the mapping step, it
+takes about 3 minutes to assmble a bacterial genome. Under the default setting,
+miniasm assembles 5 out of 12 datasets into a single contig. The 12 data sets
+are [PacBio E. coli sample][PB-151103], [ERS473430][ERS473430],
+[ERS544009][ERS544009], [ERS554120][ERS554120], [ERS605484][ERS605484],
+[ERS617393][ERS617393], [ERS646601][ERS646601], [ERS659581][ERS659581],
+[ERS670327][ERS670327], [ERS685285][ERS685285], [ERS743109][ERS743109] and a
+[deprecated PacBio E. coli data set][PB-deprecated].
+
+Miniasm proves that at least for high-coverage bacterial genomes, it is
+possible to generate long contigs from raw PacBio reads without error
+correction. It also shows that [minimap][minimap] can be used as a read
+overlapper, even though it is probably not as sensitive as the more
+sophisticated overlapers such as [MHAP][mhap] and [DALIGNER][daligner].
+Coupled with long-read error correctors and consensus tools, miniasm
+may also be useful to produce high-quality assemblies.
 
 
 
@@ -47,3 +55,5 @@ sample][PB-deprecated].
 [ERS743109]: http://www.ebi.ac.uk/ena/data/view/ERS743109
 [PB-151103]: https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
 [PB-deprecated]: https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-20kb-Size-Selected-Library-with-P6-C4
+[mhap]: https://github.com/marbl/MHAP
+[daligner]: https://github.com/thegenemyers/DALIGNER
