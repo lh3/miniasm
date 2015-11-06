@@ -97,9 +97,6 @@ int main(int argc, char *argv[])
 			n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
 		}
 		if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
-	} else {
-		sub = (ma_sub_t*)calloc(d->n_seq, sizeof(ma_sub_t));
-		for (i = 0; i < d->n_seq; ++i) sub[i].e = d->seq[i].len;
 	}
 
 	if (!no_second) {

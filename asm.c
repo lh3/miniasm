@@ -11,15 +11,18 @@ asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, siz
 	size_t i;
 	asg_t *g;
 	g = asg_init();
-	for (i = 0; i < d->n_seq; ++i)
-		asg_seq_set(g, i, sub[i].e - sub[i].s, (sub[i].del || d->seq[i].del));
+	for (i = 0; i < d->n_seq; ++i) {
+		if (sub) asg_seq_set(g, i, sub[i].e - sub[i].s, (sub[i].del || d->seq[i].del));
+		else asg_seq_set(g, i, d->seq[i].len, d->seq[i].del);
+	}
 	for (i = 0; i < n_hits; ++i) {
 		int r;
 		asg_arc_t t, *p;
 		const ma_hit_t *h = &hit[i];
-		const ma_sub_t *sq = &sub[h->qns>>32], *st = &sub[h->tn];
 		uint32_t qn = h->qns>>32;
-		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, opt->max_hang, opt->int_frac, opt->min_ovlp, &t);
+		int ql = sub? sub[qn].e - sub[qn].s : d->seq[qn].len;
+		int tl = sub? sub[h->tn].e - sub[h->tn].s : d->seq[h->tn].len;
+		r = ma_hit2arc(h, ql, tl, opt->max_hang, opt->int_frac, opt->min_ovlp, &t);
 		if (r >= 0) {
 			if (qn == h->tn) { // self match
 				if ((uint32_t)h->qns == h->ts && h->qe == h->te && h->rev) // PacBio-specific artifact (TODO: is this right when we skip target containment above?)
@@ -31,6 +34,7 @@ asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, siz
 		} else if (r == MA_HT_QCONT) g->seq[qn].del = 1;
 	}
 	asg_cleanup(g);
+	fprintf(stderr, "[M::%s] read %d arcs\n", __func__, g->n_arc);
 	return g;
 }
 
@@ -39,9 +43,14 @@ void ma_sg_print(const asg_t *g, const sdict_t *d, const ma_sub_t *sub, FILE *fp
 	uint32_t i;
 	for (i = 0; i < g->n_arc; ++i) {
 		const asg_arc_t *p = &g->arc[i];
-		const ma_sub_t *sq = &sub[p->ul>>33], *st = &sub[p->v>>1];
-		fprintf(fp, "L\t%s:%d-%d\t%c\t%s:%d-%d\t%c\t%dM\tSD:i:%d\n", d->seq[p->ul>>33].name, sq->s + 1, sq->e, "+-"[p->ul>>32&1],
-				d->seq[p->v>>1].name, st->s + 1, st->e, "+-"[p->v&1], p->ol, (uint32_t)p->ul);
+		if (sub) {
+			const ma_sub_t *sq = &sub[p->ul>>33], *st = &sub[p->v>>1];
+			fprintf(fp, "L\t%s:%d-%d\t%c\t%s:%d-%d\t%c\t%dM\tSD:i:%d\n", d->seq[p->ul>>33].name, sq->s + 1, sq->e, "+-"[p->ul>>32&1],
+					d->seq[p->v>>1].name, st->s + 1, st->e, "+-"[p->v&1], p->ol, (uint32_t)p->ul);
+		} else {
+			fprintf(fp, "L\t%s\t%c\t%s\t%c\t%dM\tSD:i:%d\n", d->seq[p->ul>>33].name, "+-"[p->ul>>32&1],
+					d->seq[p->v>>1].name, "+-"[p->v&1], p->ol, (uint32_t)p->ul);
+		}
 	}
 }
 
@@ -75,7 +84,8 @@ void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE 
 		fprintf(fp, "S\t%s\t%s\tLN:i:%d\n", name, p->s? p->s : "*", p->len);
 		for (j = l = 0; j < p->n; l += (uint32_t)p->a[j++]) {
 			uint32_t x = p->a[j]>>33;
-			fprintf(fp, "a\t%s\t%d\t%s:%d-%d\t%c\t%d\n", name, l, d->seq[x].name, sub[x].s + 1, sub[x].e, "+-"[p->a[j]>>32&1], (uint32_t)p->a[j]);
+			if (sub) fprintf(fp, "a\t%s\t%d\t%s:%d-%d\t%c\t%d\n", name, l, d->seq[x].name, sub[x].s + 1, sub[x].e, "+-"[p->a[j]>>32&1], (uint32_t)p->a[j]);
+			else fprintf(fp, "a\t%s\t%d\t%s\t%c\t%d\n", name, l, d->seq[x].name, "+-"[p->a[j]>>32&1], (uint32_t)p->a[j]);
 		}
 	}
 	for (i = 0; i < ug->g->n_arc; ++i) {
@@ -90,9 +100,13 @@ void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE 
 			fprintf(fp, "x\tutg%.6dc\t%d\t%d\n", i + 1, u->len, u->n);
 		} else {
 			for (j = 0; j < 2; ++j) cnt[j] = asg_arc_n(ug->g, i<<1|j);
-			fprintf(fp, "x\tutg%.6dl\t%d\t%d\t%d\t%d\t%s:%d-%d\t%c\t%s:%d-%d\t%c\n", i + 1, u->len, u->n, cnt[1], cnt[0],
-					d->seq[u->start>>1].name, sub[u->start>>1].s + 1, sub[u->start>>1].e, "+-"[u->start&1],
-					d->seq[u->end>>1].name, sub[u->end>>1].s + 1, sub[u->end>>1].e, "+-"[u->end&1]);
+			if (sub)
+				fprintf(fp, "x\tutg%.6dl\t%d\t%d\t%d\t%d\t%s:%d-%d\t%c\t%s:%d-%d\t%c\n", i + 1, u->len, u->n, cnt[1], cnt[0],
+						d->seq[u->start>>1].name, sub[u->start>>1].s + 1, sub[u->start>>1].e, "+-"[u->start&1],
+						d->seq[u->end>>1].name, sub[u->end>>1].s + 1, sub[u->end>>1].e, "+-"[u->end&1]);
+			else
+				fprintf(fp, "x\tutg%.6dl\t%d\t%d\t%d\t%d\t%s\t%c\t%s\t%c\n", i + 1, u->len, u->n, cnt[1], cnt[0],
+						d->seq[u->start>>1].name, "+-"[u->start&1], d->seq[u->end>>1].name, "+-"[u->end&1]);
 		}
 	}
 }
