@@ -25,7 +25,7 @@ depend:
 # DO NOT DELETE
 
 asg.o: asg.h kvec.h ksort.h
-asm.o: miniasm.h sdict.h asg.h kvec.h kseq.h
+asm.o: miniasm.h sdict.h asg.h kvec.h kdq.h kseq.h
 common.o: miniasm.h sdict.h asg.h
 hit.o: sdict.h paf.h kvec.h sys.h miniasm.h asg.h ksort.h
 main.o: kvec.h sys.h paf.h sdict.h miniasm.h asg.h
