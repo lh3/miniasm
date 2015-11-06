@@ -14,7 +14,7 @@ static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
 	uint32_t i;
 	for (i = 0; i < d->n_seq; ++i)
-		if (!d->seq[i].del)
+		if (!d->seq[i].del && sub[i].s != sub[i].e)
 			printf("%s\t%d\t%d\n", d->seq[i].name, sub[i].s, sub[i].e);
 }
 
