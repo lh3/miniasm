@@ -67,19 +67,21 @@ int main(int argc, char *argv[])
 	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
 
 	// first-round filtering
-	if (stage >= 2) sub = ma_hit_sub(opt.min_dp, 0, n_hits, hit, d->n_seq);
-	if (stage >= 3) n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
-	if (stage >= 4) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
+	if (stage >= 2) {
+		sub = ma_hit_sub(opt.min_dp, 0, n_hits, hit, d->n_seq);
+		n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
+	}
+	if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
 
 	// second-round filtering
-	if (second_flt && stage >= 5) {
+	if (second_flt && stage >= 4) {
 		ma_sub_t *sub2;
 		sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, opt.min_span/2, n_hits, hit, d->n_seq);
 		n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 		ma_sub_merge(d->n_seq, sub, sub2);
 		free(sub2);
 	}
-	if (stage >= 6) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
+	if (stage >= 5) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
 	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
 	if (bed_out) print_subs(d, sub);

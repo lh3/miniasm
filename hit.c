@@ -26,9 +26,10 @@ void ma_hit_mark_unused(sdict_t *d, int n, const ma_hit_t *a)
 		d->seq[i].aux = 0;
 	for (i = 0; i < n; ++i)
 		d->seq[a[i].qns>>32].aux = d->seq[a[i].tn].aux = 1;
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < d->n_seq; ++i) {
 		sd_seq_t *s = &d->seq[i];
-		if (s->aux) s->del = 1, s->aux = 0;
+		if (!s->aux) s->del = 1;
+		else s->aux = 0;
 	}
 }
 

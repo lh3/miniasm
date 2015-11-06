@@ -37,7 +37,7 @@ int32_t sd_put(sdict_t *d, const char *name, uint32_t len)
 			d->seq = (sd_seq_t*)realloc(d->seq, d->m_seq * sizeof(sd_seq_t));
 		}
 		s = &d->seq[d->n_seq];
-		s->len = len, s->aux = 0;
+		s->len = len, s->aux = 0, s->del = 0;
 		kh_key(h, k) = s->name = strdup(name);
 		kh_val(h, k) = d->n_seq++;
 	} // TODO: test if len is the same;
