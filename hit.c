@@ -192,7 +192,6 @@ size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n
 	for (i = m = 0; i < n; ++i) {
 		ma_hit_t *h = &a[i];
 		ma_sub_t *sq = &sub[h->qns>>32], *st = &sub[h->tn];
-		if (sq->del || st->del) continue;
 		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, opt->max_hang, opt->int_frac, opt->min_ovlp, &t);
 		if (r == MA_HT_QCONT) sq->del = 1;
 		else if (r == MA_HT_TCONT) st->del = 1;
