@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -r FLOAT    overlap drop ratio [%.2f]\n", opt.ovlp_drop_ratio);
 		fprintf(stderr, "    -e INT      small unitig threshold [%d]\n", opt.max_ext);
 		fprintf(stderr, "    -f FILE     read sequences []\n");
-		fprintf(stderr, "  Output:\n");
+		fprintf(stderr, "  Steps:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
 		fprintf(stderr, "    -2          skip 2-pass read selection\n");
@@ -113,7 +113,6 @@ int main(int argc, char *argv[])
 
 	hit = (ma_hit_t*)realloc(hit, n_hits * sizeof(ma_hit_t));
 
-	// assembly
 	if (strcmp(outfmt, "bed") == 0) {
 		print_subs(d, sub);
 	} else if (strcmp(outfmt, "paf") == 0) {
@@ -124,29 +123,26 @@ int main(int argc, char *argv[])
 
 		fprintf(stderr, "[M::%s] ===> Step 4: graph cleaning <===\n", __func__);
 		sg = ma_sg_gen(&opt, d, sub, n_hits, hit);
-		asg_arc_del_trans(sg, opt.gap_fuzz);
-		asg_pop_bubble(sg, opt.bub_dist);
-		asg_cut_short_utg(sg, opt.max_ext, 1);
-		asg_arc_del_short(sg, opt.ovlp_drop_ratio);
-		asg_pop_bubble(sg, opt.bub_dist);
-		for (i = 0; i < 3; ++i)
-			asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 6) asg_arc_del_trans(sg, opt.gap_fuzz);
+		if (stage >= 7) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 8) asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 9) asg_arc_del_short(sg, opt.ovlp_drop_ratio);
+		if (stage >= 10) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 11) for (i = 0; i < 3; ++i) asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 12) asg_pop_bubble(sg, opt.bub_dist);
 
 		if (strcmp(outfmt, "ug") == 0) {
 			fprintf(stderr, "[M::%s] ===> Step 5: generating unitig graph <===\n", __func__);
 			ug = ma_ug_gen(sg);
 			if (fn_reads) ma_ug_seq(ug, d, sub, fn_reads);
 			ma_ug_print(ug, d, sub, stdout);
-		} else if (strcmp(outfmt, "sg") == 0) {
-			ma_sg_print(sg, d, sub, stdout);
-		}
+		} else ma_sg_print(sg, d, sub, stdout);
 
 		asg_destroy(sg);
 		ma_ug_destroy(ug);
 	}
 
-	free(sub);
-	free(hit);
+	free(sub); free(hit);
 	sd_destroy(d);
 
 	fprintf(stderr, "[M::%s] Version: %s\n", __func__, MA_VERSION);
