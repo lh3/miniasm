@@ -19,6 +19,19 @@ void ma_hit_sort(size_t n, ma_hit_t *a)
 	radix_sort_hit(a, a + n);
 }
 
+void ma_hit_mark_unused(sdict_t *d, int n, const ma_hit_t *a)
+{
+	size_t i;
+	for (i = 0; i < d->n_seq; ++i)
+		d->seq[i].aux = 0;
+	for (i = 0; i < n; ++i)
+		d->seq[a[i].qns>>32].aux = d->seq[a[i].tn].aux = 1;
+	for (i = 0; i < n; ++i) {
+		sd_seq_t *s = &d->seq[i];
+		if (s->aux) s->del = 1, s->aux = 0;
+	}
+}
+
 static inline int paf_rec_isflt(const paf_rec_t *r, int min_span, int min_match, float min_frac)
 {
 	if (r->qe - r->qs < min_span || r->te - r->ts < min_span) return 1;
@@ -185,6 +198,7 @@ size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n
 	}
 	for (i = 0; i < d->n_seq; ++i)
 		if (sub[i].del) d->seq[i].del = 1;
+	ma_hit_mark_unused(d, n, a);
 	map = sd_squeeze(d);
 	for (i = 0; i < old_n_seq; ++i)
 		if (map[i] >= 0) sub[map[i]] = sub[i];
