@@ -55,18 +55,13 @@ ma_hit_t *ma_hit_read(const char *fn, const ma_opt_t *opt, sdict_t *d, size_t *n
 	return h.a;
 }
 
-ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a)
+ma_sub_t *ma_hit_sub(int min_dp, size_t n, const ma_hit_t *a, size_t n_sub)
 {
-	size_t i, j, last, n_sub = 0, n_remained = 0;
+	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
 	kvec_t(uint64_t) c = {0,0,0};
 	ma_sub_t *sub = 0;
 
-	for (i = 0; i < n; ++i) {
-		n_sub = n_sub > a[i].qns>>32? n_sub : a[i].qns>>32;
-		n_sub = n_sub > a[i].tn? n_sub : a[i].tn;
-	}
-	++n_sub;
 	sub = (ma_sub_t*)calloc(n_sub, sizeof(ma_sub_t));
 	for (i = 1, last = 0; i <= n; ++i) {
 		if (i == n || a[i].qns>>32 != a[i-1].qns>>32) { // we come to a new query sequence
@@ -159,6 +154,15 @@ size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *
 			tot_len += sub[a[i-1].qns>>32].e - sub[a[i-1].qns>>32].s;
 	*cov = (double)tot_dp / tot_len;
 	if (ma_verbose >= 3)
-		fprintf(stderr, "[M::%s::%s] %ld hits remain after filtering; crude depth: %.2f\n", __func__, sys_timestamp(), m, *cov);
+		fprintf(stderr, "[M::%s::%s] %ld hits remain after filtering; crude coverage after filtering: %.2f\n", __func__, sys_timestamp(), m, *cov);
 	return m;
+}
+
+void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b)
+{
+	size_t i;
+	for (i = 0; i < n_sub; ++i) {
+		a[i].s += b[i].s;
+		a[i].e = a[i].s + (b[i].e - b[i].s);
+	}
 }

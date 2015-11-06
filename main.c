@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	int i, c;
 	sdict_t *d;
 	char *s;
-	ma_sub_t *sub;
+	ma_sub_t *sub, *sub2;
 	ma_hit_t *hit;
 	size_t n_hits;
 	asg_arc_t ta;
@@ -44,9 +44,13 @@ int main(int argc, char *argv[])
 	d = sd_init();
 
 	hit = ma_hit_read(argv[optind], &opt, d, &n_hits);
-	sub = ma_hit_sub(opt.min_dp, n_hits, hit);
+	sub = ma_hit_sub(opt.min_dp, n_hits, hit, d->n_seq);
 	n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
 	n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
+
+	sub2 = ma_hit_sub((int)(cov * .1 + .499) - 1, n_hits, hit, d->n_seq);
+	ma_sub_merge(d->n_seq, sub, sub2);
+	free(sub2);
 
 	for (i = 0; i < n_hits; ++i) {
 		ma_hit_t *p = &hit[i];
