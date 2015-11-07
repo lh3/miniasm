@@ -262,7 +262,7 @@ int ma_ug_seq(ma_ug_t *g, const sdict_t *d, const ma_sub_t *sub, const char *fn)
 		t = &tmp[id];
 		u = &g->u.a[t->utg];
 		if (sub) {
-			assert(sub[id].e - sub[id].s < ks->seq.l);
+			assert(sub[id].e - sub[id].s <= ks->seq.l);
 			memmove(ks->seq.s, ks->seq.s + sub[id].s, sub[id].e - sub[id].s);
 			ks->seq.l = sub[id].e - sub[id].s;
 		}
