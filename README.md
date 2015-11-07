@@ -72,10 +72,11 @@ may also be useful to produce high-quality assemblies.
 1. Consensus base quality is similar to input reads (may be fixed with a
    consensus tool).
 
-2. Tested on 12 high-coverage bacterial PacBio data sets only.
+2. Only tested on a dozen of high-coverage bacterial PacBio/ONT data sets (more
+   testing needed).
 
 3. Prone to collapse repeats or segmental duplications longer than input reads
-   (hard to fix with noisy reads).
+   (hard to fix without error correction).
 
 
 
