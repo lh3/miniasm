@@ -190,9 +190,11 @@ add_unitig:
 		if (mark[p->ul>>32^1] >= 0 && mark[p->v] >= 0) {
 			asg_arc_t *q;
 			uint32_t u = mark[p->ul>>32^1]^1;
+			int l = ug->u.a[u>>1].len - p->ol;
+			if (l < 0) l = 1;
 			q = asg_arc_pushp(ug->g);
 			q->ol = p->ol, q->del = 0;
-			q->ul = (uint64_t)u<<32 | (ug->u.a[u>>1].len - p->ol);
+			q->ul = (uint64_t)u<<32 | l;
 			q->v = mark[p->v];
 		}
 	}
