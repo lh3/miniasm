@@ -20,9 +20,10 @@ typedef struct {
 	float int_frac;
 
 	int gap_fuzz;
+	int n_rounds;
 	int bub_dist;
 	int max_ext;
-	float ovlp_drop_ratio;
+	float min_ovlp_drop_ratio, max_ovlp_drop_ratio;
 } ma_opt_t;
 
 typedef struct {

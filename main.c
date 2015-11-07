@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r44"
+#define MA_VERSION "r45"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "m:s:c:S:i:d:g:o:h:I:r:f:e:p:12V")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:S:i:d:g:o:h:I:r:f:e:p:12V")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -52,15 +52,19 @@ int main(int argc, char *argv[])
 		else if (c == 'g') opt.gap_fuzz = atoi(optarg);
 		else if (c == 'h') opt.max_hang = atoi(optarg);
 		else if (c == 'I') opt.int_frac = atof(optarg);
-		else if (c == 'r') opt.ovlp_drop_ratio = atof(optarg);
 		else if (c == 'e') opt.max_ext = atoi(optarg);
 		else if (c == 'f') fn_reads = optarg;
 		else if (c == 'p') outfmt = optarg;
 		else if (c == '1') no_first = 1;
 		else if (c == '2') no_second = 1;
+		else if (c == 'n') opt.n_rounds = atoi(optarg);
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
 			return 0;
+		} else if (c == 'r') {
+			char *s;
+			opt.max_ovlp_drop_ratio = strtod(optarg, &s);
+			if (*s == ',') opt.min_ovlp_drop_ratio = strtod(s + 1, &s);
 		}
 	}
 	if (argc == optind) {
@@ -68,19 +72,21 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Pre-selection:\n");
 		fprintf(stderr, "    -m INT      min match length [%d]\n", opt.min_match);
-		fprintf(stderr, "    -i FLOAT    min identity [%.2f]\n", opt.min_iden);
+		fprintf(stderr, "    -i FLOAT    min identity [%.2g]\n", opt.min_iden);
 		fprintf(stderr, "    -s INT      min span [%d]\n", opt.min_span);
 		fprintf(stderr, "    -c INT      min coverage [%d]\n", opt.min_dp);
 		fprintf(stderr, "  Overlap:\n");
 		fprintf(stderr, "    -o INT      min overlap [%d]\n", opt.min_ovlp);
 		fprintf(stderr, "    -h INT      max over hang length [%d]\n", opt.max_hang);
-		fprintf(stderr, "    -I FLOAT    min end-to-end match ratio [%.2f]\n", opt.int_frac);
+		fprintf(stderr, "    -I FLOAT    min end-to-end match ratio [%.2g]\n", opt.int_frac);
 		fprintf(stderr, "  Layout:\n");
 		fprintf(stderr, "    -g INT      max gap differences between reads for trans-reduction [%d]\n", opt.gap_fuzz);
 		fprintf(stderr, "    -d INT      max distance for bubble popping [%d]\n", opt.bub_dist);
-		fprintf(stderr, "    -r FLOAT    overlap drop ratio [%.2f]\n", opt.ovlp_drop_ratio);
 		fprintf(stderr, "    -e INT      small unitig threshold [%d]\n", opt.max_ext);
 		fprintf(stderr, "    -f FILE     read sequences []\n");
+		fprintf(stderr, "    -n INT      rounds of short overlap removal [%d]\n", opt.n_rounds);
+		fprintf(stderr, "    -r FLOAT[,FLOAT]\n");
+		fprintf(stderr, "                max and min overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.min_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
@@ -129,13 +135,16 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] ===> Step 4: graph cleaning <===\n", __func__);
 		sg = ma_sg_gen(&opt, d, sub, n_hits, hit);
 		if (stage >= 6) asg_arc_del_trans(sg, opt.gap_fuzz);
-		if (stage >= 7) asg_pop_bubble(sg, opt.bub_dist);
-		if (stage >= 8) asg_cut_short_utg(sg, opt.max_ext, 1);
-		if (stage >= 9) asg_pop_bubble(sg, opt.bub_dist);
-		if (stage >= 10) asg_arc_del_short(sg, opt.ovlp_drop_ratio);
-		if (stage >= 11) asg_pop_bubble(sg, opt.bub_dist);
-		if (stage >= 12) for (i = 0; i < 3; ++i) asg_cut_short_utg(sg, opt.max_ext, 1);
-		if (stage >= 13) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 7) asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 8) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 9) {
+			for (i = 0; i <= opt.n_rounds; ++i) {
+				float r = opt.min_ovlp_drop_ratio + (opt.max_ovlp_drop_ratio - opt.min_ovlp_drop_ratio) / opt.n_rounds * i;
+				asg_arc_del_short(sg, r);
+				asg_cut_short_utg(sg, opt.max_ext, 1);
+				asg_pop_bubble(sg, opt.bub_dist);
+			}
+		}
 
 		if (strcmp(outfmt, "ug") == 0) {
 			fprintf(stderr, "[M::%s] ===> Step 5: generating unitig graph <===\n", __func__);
