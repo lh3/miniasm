@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r43"
+#define MA_VERSION "r44"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -131,10 +131,11 @@ int main(int argc, char *argv[])
 		if (stage >= 6) asg_arc_del_trans(sg, opt.gap_fuzz);
 		if (stage >= 7) asg_pop_bubble(sg, opt.bub_dist);
 		if (stage >= 8) asg_cut_short_utg(sg, opt.max_ext, 1);
-		if (stage >= 9) asg_arc_del_short(sg, opt.ovlp_drop_ratio);
-		if (stage >= 10) asg_pop_bubble(sg, opt.bub_dist);
-		if (stage >= 11) for (i = 0; i < 3; ++i) asg_cut_short_utg(sg, opt.max_ext, 1);
-		if (stage >= 12) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 9) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 10) asg_arc_del_short(sg, opt.ovlp_drop_ratio);
+		if (stage >= 11) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 12) for (i = 0; i < 3; ++i) asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 13) asg_pop_bubble(sg, opt.bub_dist);
 
 		if (strcmp(outfmt, "ug") == 0) {
 			fprintf(stderr, "[M::%s] ===> Step 5: generating unitig graph <===\n", __func__);
