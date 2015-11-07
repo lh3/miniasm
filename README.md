@@ -10,14 +10,15 @@ minimap/minimap -Sw5 -L100 -m0 -t8 reads.fa reads.fa | gzip -1 > reads.paf.gz
 miniasm/miniasm -f reads.fa reads.paf.gz > reads.gfa
 ```
 Example datasets: [PB-151103][PB-151103] and [ERS743109][ERS743109]. If you
-are not familiar with PacBio, you can extract ERS743109 reads in the fasta
-format with the following procedure, which will take much longer than assembly:
+are not familiar with PacBio data, you can extract ERS743109 reads in the fasta
+format as follows (which will take much longer than assembly):
 ```sh
 seq 3 | xargs -i wget -O {}.bax.h5 ftp://ftp.sra.ebi.ac.uk/vol1/ERA472/ERA472339/pacbio_hdf5/m150622_205359_00127_c100790292550000001823177509091575_s1_p0.{}.bax.h5
 wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta
 seq 3 | xargs -i ./pls2fasta {}.bax.h5 {}.fa -trimByRegion
 seq 3 | xargs -i cat {}.fa | gzip -1 > reads.fa.gz
 ```
+Assembling these reads takes 3-5 minutes.
 
 ## Introduction
 
@@ -31,14 +32,14 @@ sequences. Thus the per-base error rate is similar to the raw input reads.
 So far miniasm is in very early development stage. It has only been tested on
 twelve bacterial genomes sequenced with PacBio. Including the mapping step, it
 takes about 3 minutes to assemble a bacterial genome. Under the default setting,
-miniasm assembles 5 out of 12 datasets into a single contig. The 12 data sets
+miniasm assembles 5 out of the 12 datasets into a single contig. The 12 data sets
 are [PacBio E. coli sample][PB-151103], [ERS473430][ERS473430],
 [ERS544009][ERS544009], [ERS554120][ERS554120], [ERS605484][ERS605484],
 [ERS617393][ERS617393], [ERS646601][ERS646601], [ERS659581][ERS659581],
 [ERS670327][ERS670327], [ERS685285][ERS685285], [ERS743109][ERS743109] and a
 [deprecated PacBio E. coli data set][PB-deprecated].
 
-Miniasm proves that at least for high-coverage bacterial genomes, it is
+Miniasm confirms that at least for high-coverage bacterial genomes, it is
 possible to generate long contigs from raw PacBio reads without error
 correction. It also shows that [minimap][minimap] can be used as a read
 overlapper, even though it is probably not as sensitive as the more
