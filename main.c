@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r31"
+#define MA_VERSION "r41"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "m:s:c:S:i:d:g:o:h:I:r:f:e:p:12")) >= 0) {
+	while ((c = getopt(argc, argv, "m:s:c:S:i:d:g:o:h:I:r:f:e:p:12V")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -58,6 +58,10 @@ int main(int argc, char *argv[])
 		else if (c == 'p') outfmt = optarg;
 		else if (c == '1') no_first = 1;
 		else if (c == '2') no_second = 1;
+		else if (c == 'V') {
+			printf("%s\n", MA_VERSION);
+			return 0;
+		}
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
@@ -77,10 +81,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -r FLOAT    overlap drop ratio [%.2f]\n", opt.ovlp_drop_ratio);
 		fprintf(stderr, "    -e INT      small unitig threshold [%d]\n", opt.max_ext);
 		fprintf(stderr, "    -f FILE     read sequences []\n");
-		fprintf(stderr, "  Steps:\n");
+		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
 		fprintf(stderr, "    -2          skip 2-pass read selection\n");
+		fprintf(stderr, "    -V          print version number\n");
 		return 1;
 	}
 
