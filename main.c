@@ -136,13 +136,13 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] ===> Step 4: graph cleaning <===\n", __func__);
 		sg = ma_sg_gen(&opt, d, sub, n_hits, hit);
 		if (stage >= 6) asg_arc_del_trans(sg, opt.gap_fuzz);
-		if (stage >= 7) asg_cut_short_utg(sg, opt.max_ext, 1);
+		if (stage >= 7) asg_cut_tip(sg, opt.max_ext);
 		if (stage >= 8) asg_pop_bubble(sg, opt.bub_dist);
 		if (stage >= 9) {
 			for (i = 0; i <= opt.n_rounds; ++i) {
 				float r = opt.min_ovlp_drop_ratio + (opt.max_ovlp_drop_ratio - opt.min_ovlp_drop_ratio) / opt.n_rounds * i;
 				asg_arc_del_short(sg, r);
-				asg_cut_short_utg(sg, opt.max_ext, 1);
+				asg_cut_tip(sg, opt.max_ext);
 				asg_pop_bubble(sg, opt.bub_dist);
 			}
 		}

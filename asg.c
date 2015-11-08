@@ -192,11 +192,15 @@ int asg_arc_del_trans(asg_t *g, int fuzz)
 	return n_reduced;
 }
 
+/**********************************
+ * Filter short potential unitigs *
+ **********************************/
+
 static inline int asg_is_utg_end(const asg_t *g, uint32_t v)
 {
 	asg_arc_t *av;
 	uint32_t nv = asg_arc_n(g, v^1);
-	if (nv == 0) return 1;
+	if (nv == 0) return 1; // tip
 	if (nv > 1) return 2;
 	av = asg_arc_a(g, v^1);
 	if (asg_arc_n(g, av->v^1) != 1) return 3;
@@ -219,7 +223,7 @@ int asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
 	return ret;
 }
 
-int asg_cut_short_utg(asg_t *g, int max_ext, int mask)
+int asg_cut_tip(asg_t *g, int max_ext)
 {
 	asg64_v a = {0,0,0};
 	uint32_t n_vtx = g->n_seq * 2, v, i, cnt[3];
@@ -227,8 +231,7 @@ int asg_cut_short_utg(asg_t *g, int max_ext, int mask)
 	for (v = 0; v < n_vtx; ++v) {
 		int type;
 		if (g->seq[v>>1].del) continue;
-		type = asg_is_utg_end(g, v);
-		if (type == 0 || (1<<(type-1)&mask) == 0) continue; // not a unitig end
+		if (asg_is_utg_end(g, v) != 1) continue; // not a tip
 		asg_extend(g, v, max_ext, &a);
 		if (a.n >= max_ext) continue; // not a short unitig
 		g->seq[v>>1].del = 1;
