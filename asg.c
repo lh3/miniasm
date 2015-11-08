@@ -195,7 +195,7 @@ int asg_arc_del_trans(asg_t *g, int fuzz)
 /**********************************
  * Filter short potential unitigs *
  **********************************/
-
+#if 0
 static inline int asg_is_utg_end(const asg_t *g, uint32_t v)
 {
 	asg_arc_t *av;
@@ -222,27 +222,57 @@ int asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
 	}
 	return ret;
 }
+#endif
+static inline int asg_is_utg_end(const asg_t *g, uint32_t v, uint64_t *lw)
+{
+	uint32_t w, nv, nw, nw0, nv0 = asg_arc_n(g, v^1);
+	int i, i0 = -1;
+	asg_arc_t *aw, *av = asg_arc_a(g, v^1);
+	for (i = nv = 0; i < nv0; ++i)
+		if (!av[i].del) i0 = i, ++nv;
+	if (nv == 0) return 1; // tip
+	if (nv > 1) return 2; // multiple outgoing arcs
+	*lw = av[i0].ul<<32 | av[i0].v;
+	w = av[i0].v ^ 1;
+	nw0 = asg_arc_n(g, w);
+	aw = asg_arc_a(g, w);
+	for (i = nw = 0; i < nw0; ++i)
+		if (!aw[i].del) ++nw;
+	if (nw != 1) return 3;
+	return 0;
+}
+
+void asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
+{
+	uint32_t i;
+	uint64_t lw;
+	a->n = 0;
+	for (i = 0; i < max_ext; ++i) {
+		if (asg_is_utg_end(g, v^1, &lw) != 0) break;
+		kv_push(uint64_t, *a, lw);
+		v = (uint32_t)lw;
+	}
+}
 
 int asg_cut_tip(asg_t *g, int max_ext)
 {
 	asg64_v a = {0,0,0};
-	uint32_t n_vtx = g->n_seq * 2, v, i, cnt[3];
-	cnt[0] = cnt[1] = cnt[2] = 0;
+	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
+	uint64_t lw;
 	for (v = 0; v < n_vtx; ++v) {
-		int type;
 		if (g->seq[v>>1].del) continue;
-		if (asg_is_utg_end(g, v) != 1) continue; // not a tip
+		if (asg_is_utg_end(g, v, &lw) != 1) continue; // not a tip
 		asg_extend(g, v, max_ext, &a);
 		if (a.n >= max_ext) continue; // not a short unitig
 		g->seq[v>>1].del = 1;
 		for (i = 0; i < a.n; ++i)
 			g->seq[(uint32_t)a.a[i]>>1].del = 1;
-		++cnt[type-1];
+		++cnt;
 	}
 	free(a.a);
-	if (cnt[0] + cnt[1] + cnt[2] > 0) asg_cleanup(g);
-	fprintf(stderr, "[M::%s] dropped [%d,%d,%d] short unitigs\n", __func__, cnt[0], cnt[1], cnt[2]);
-	return cnt[0] + cnt[1] + cnt[2];
+	if (cnt > 0) asg_cleanup(g);
+	fprintf(stderr, "[M::%s] cut %d tips\n", __func__, cnt);
+	return cnt;
 }
 
 /******************
