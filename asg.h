@@ -37,6 +37,7 @@ void asg_cleanup(asg_t *g);
 int asg_arc_del_short(asg_t *g, float drop_ratio);
 int asg_arc_del_trans(asg_t *g, int fuzz);
 int asg_cut_tip(asg_t *g, int max_ext);
+int asg_cut_internal(asg_t *g, int max_ext);
 int asg_pop_bubble(asg_t *g, int max_dist);
 
 // append an arc

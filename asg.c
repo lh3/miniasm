@@ -249,6 +249,24 @@ int asg_cut_tip(asg_t *g, int max_ext)
 	return cnt;
 }
 
+int asg_cut_internal(asg_t *g, int max_ext)
+{
+	asg64_v a = {0,0,0};
+	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
+	for (v = 0; v < n_vtx; ++v) {
+		if (g->seq[v>>1].del) continue;
+		if (asg_is_utg_end(g, v, 0) != 3) continue;
+		if (asg_extend(g, v, max_ext, &a) != 3) continue;
+		for (i = 0; i < a.n; ++i)
+			asg_seq_del(g, (uint32_t)a.a[i]>>1);
+		++cnt;
+	}
+	free(a.a);
+	if (cnt > 0) asg_cleanup(g);
+	fprintf(stderr, "[M::%s] cut %d internal sequences\n", __func__, cnt);
+	return cnt;
+}
+
 /******************
  * Bubble popping *
  ******************/
