@@ -139,9 +139,13 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "[M::%s] ===> Step 4.1: transitive reduction <===\n", __func__);
 			asg_arc_del_trans(sg, opt.gap_fuzz);
 		}
-		if (stage >= 7) asg_cut_tip(sg, opt.max_ext);
-		if (stage >= 8) asg_pop_bubble(sg, opt.bub_dist);
+		if (stage >= 7) {
+			fprintf(stderr, "[M::%s] ===> Step 4.2: initial tip cutting and bubble popping <===\n", __func__);
+			asg_cut_tip(sg, opt.max_ext);
+			asg_pop_bubble(sg, opt.bub_dist);
+		}
 		if (stage >= 9) {
+			fprintf(stderr, "[M::%s] ===> Step 4.3: cutting short overlaps (%d rounds in total) <===\n", __func__, opt.n_rounds + 1);
 			for (i = 0; i <= opt.n_rounds; ++i) {
 				float r = opt.min_ovlp_drop_ratio + (opt.max_ovlp_drop_ratio - opt.min_ovlp_drop_ratio) / opt.n_rounds * i;
 				if (asg_arc_del_short(sg, r) != 0) {
@@ -151,13 +155,14 @@ int main(int argc, char *argv[])
 			}
 		}
 		if (stage >= 10) {
+			fprintf(stderr, "[M::%s] ===> Step 4.4: removing short internal sequences <===\n", __func__);
 			asg_cut_internal(sg, 1);
 			asg_cut_tip(sg, opt.max_ext);
 			asg_pop_bubble(sg, opt.bub_dist);
 		}
 
 		if (strcmp(outfmt, "ug") == 0) {
-			fprintf(stderr, "[M::%s] ===> Step 5: generating unitig graph <===\n", __func__);
+			fprintf(stderr, "[M::%s] ===> Step 5: generating unitigs <===\n", __func__);
 			ug = ma_ug_gen(sg);
 			if (fn_reads) ma_ug_seq(ug, d, sub, fn_reads);
 			ma_ug_print(ug, d, sub, stdout);
