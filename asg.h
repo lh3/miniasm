@@ -58,4 +58,20 @@ static inline void asg_arc_del(asg_t *g, uint32_t v, uint32_t w, int del)
 		if (av[i].v == w) av[i].del = !!del;
 }
 
+// set asg_arc_t::del and asg_seq_t::del to 1 for sequence s and all its associated arcs
+static inline void asg_seq_del(asg_t *g, uint32_t s)
+{
+	uint32_t k;
+	g->seq[s].del = 1;
+	for (k = 0; k < 2; ++k) {
+		uint32_t i, v = s<<1 | k;
+		uint32_t nv = asg_arc_n(g, v);
+		asg_arc_t *av = asg_arc_a(g, v);
+		for (i = 0; i < nv; ++i) {
+			av[i].del = 1;
+			asg_arc_del(g, av[i].v^1, v^1, 1);
+		}
+	}
+}
+
 #endif

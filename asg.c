@@ -205,7 +205,7 @@ static inline int asg_is_utg_end(const asg_t *g, uint32_t v, uint64_t *lw)
 		if (!av[i].del) i0 = i, ++nv;
 	if (nv == 0) return 1; // tip
 	if (nv > 1) return 2; // multiple outgoing arcs
-	*lw = av[i0].ul<<32 | av[i0].v;
+	if (lw) *lw = av[i0].ul<<32 | av[i0].v;
 	w = av[i0].v ^ 1;
 	nw0 = asg_arc_n(g, w);
 	aw = asg_arc_a(g, w);
@@ -234,13 +234,13 @@ int asg_cut_tip(asg_t *g, int max_ext)
 {
 	asg64_v a = {0,0,0};
 	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
-	uint64_t lw;
 	for (v = 0; v < n_vtx; ++v) {
 		if (g->seq[v>>1].del) continue;
-		if (asg_is_utg_end(g, v, &lw) != 1) continue; // not a tip
+		if (asg_is_utg_end(g, v, 0) != 1) continue; // not a tip
 		if (asg_extend(g, v, max_ext, &a) == 0) continue; // not a short unitig
 		for (i = 0; i < a.n; ++i)
-			g->seq[(uint32_t)a.a[i]>>1].del = 1;
+			asg_seq_del(g, (uint32_t)a.a[i]>>1);
+//			g->seq[(uint32_t)a.a[i]>>1].del = 1;
 		++cnt;
 	}
 	free(a.a);
