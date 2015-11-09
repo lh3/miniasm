@@ -215,18 +215,18 @@ static inline int asg_is_utg_end(const asg_t *g, uint32_t v, uint64_t *lw)
 	return 0;
 }
 
-uint32_t asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
+int asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
 {
-	uint32_t i, ret;
+	int ret;
 	uint64_t lw;
 	a->n = 0;
 	kv_push(uint64_t, *a, v);
-	for (i = 0; i < max_ext; ++i) {
+	do {
 		ret = asg_is_utg_end(g, v^1, &lw);
 		if (ret != 0) break;
 		kv_push(uint64_t, *a, lw);
 		v = (uint32_t)lw;
-	}
+	} while (--max_ext > 0);
 	return ret;
 }
 
