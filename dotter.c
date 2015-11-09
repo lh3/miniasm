@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <math.h>
 #include "paf.h"
 #include "sdict.h"
 #include "kvec.h"
@@ -15,8 +16,10 @@ typedef struct {
 
 typedef struct {
 	const char *name;
+	double tot;
+	uint64_t w;
 	uint32_t i;
-} srtx_t;
+} srtaux_t;
 
 static inline int mixed_numcompare(const char *_a, const char *_b)
 {
@@ -44,11 +47,13 @@ static inline int mixed_numcompare(const char *_a, const char *_b)
 
 #include "ksort.h"
 #define srtx_lt(a, b) (mixed_numcompare((a).name, (b).name) < 0)
-KSORT_INIT(dtx, srtx_t, srtx_lt)
+KSORT_INIT(dtx, srtaux_t, srtx_lt)
+#define srty_lt(a, b) ((a).tot < (b).tot)
+KSORT_INIT(dty, srtaux_t, srty_lt)
 
 int main(int argc, char *argv[])
 {
-	int min_span = 1000, min_match = 40, width = 600, height;
+	int min_span = 1000, min_match = 100, width = 600, height, diagonal = 1;
 	int color[2] = { 0xFF0000, 0x0080FF }, font_size = 11, no_label = 0;
 	float min_iden = .1;
 	paf_file_t *f;
@@ -56,17 +61,18 @@ int main(int argc, char *argv[])
 	paf_rec_t r;
 	int32_t c, i, j;
 	uint64_t *acclen[2], totlen[2];
-	srtx_t *a[2];
+	srtaux_t *a[2];
 	kvec_t(dt_hit_t) h = {0,0,0};
 	double sx, sy;
 
-	while ((c = getopt(argc, argv, "m:i:s:w:f:L")) >= 0) {
+	while ((c = getopt(argc, argv, "m:i:s:w:f:Ld")) >= 0) {
 		if (c == 'm') min_match = atoi(optarg);
 		else if (c == 'i') min_iden = atof(optarg);
 		else if (c == 's') min_span = atoi(optarg);
 		else if (c == 'w') width = atoi(optarg);
 		else if (c == 'f') font_size = atoi(optarg);
 		else if (c == 'L') no_label = 1;
+		else if (c == 'd') diagonal = 0;
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: minidot [options] <in.paf>\n");
@@ -77,6 +83,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "  -w INT      image width [%d]\n", width);
 		fprintf(stderr, "  -f INT      font size [%d]\n", font_size);
 		fprintf(stderr, "  -L          don't print labels\n");
+		fprintf(stderr, "  -D          don't try to put hits onto the diagonal\n");
 		return 1;
 	}
 
@@ -99,10 +106,32 @@ int main(int argc, char *argv[])
 	for (i = 0; i < 2; ++i) {
 		uint32_t n = d[i]->n_seq;
 		uint64_t l = 0;
-		a[i] = (srtx_t*)calloc(n + 1, sizeof(srtx_t));
-		for (j = 0; j < n; ++j)
-			a[i][j].name = d[i]->seq[j].name, a[i][j].i = j;
-		ks_introsort_dtx(d[i]->n_seq, a[i]);
+		a[i] = (srtaux_t*)calloc(n + 1, sizeof(srtaux_t));
+		if (i == 0 || !diagonal) {
+			for (j = 0; j < n; ++j)
+				a[i][j].name = d[i]->seq[j].name, a[i][j].i = j;
+			ks_introsort_dtx(n, a[i]);
+		} else {
+			srtaux_t *b = a[i];
+			uint32_t *inv;
+			inv = (uint32_t*)calloc(d[0]->n_seq, 4);
+			for (j = 0; j < d[0]->n_seq; ++j)
+				inv[a[0][j].i] = j;
+			for (j = 0; j < n; ++j)
+				b[j].name = d[i]->seq[j].name, b[j].tot = b[j].w = 0, b[j].i = j;
+			for (j = 0; j < h.n; ++j) {
+				uint64_t w, coor;
+				dt_hit_t *p = &h.a[j];
+				srtaux_t *q = &b[p->tn];
+				coor = acclen[0][inv[p->qn]] + (p->qs + p->qe) / 2;
+				w = (uint64_t)(.01 * p->ml * p->ml + .499);
+				q->tot += (double)coor * w;
+				q->w += w;
+			}
+			free(inv);
+			for (j = 0; j < n; ++j) b[j].tot /= b[j].w;
+			ks_introsort_dty(n, b);
+		}
 		acclen[i] = (uint64_t*)calloc(n, 8);
 		for (j = 0; j < n; ++j)
 			acclen[i][a[i][j].i] = l, l += d[i]->seq[a[i][j].i].len;
