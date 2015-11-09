@@ -44,13 +44,15 @@ coli sample][PB-151103], [ERS473430][ERS473430], [ERS544009][ERS544009],
 coli data set][PB-deprecated]. ONT data are acquired from the [Loman
 Lab][loman-ont].
 
-For a *C. elegans* [PacBio data set][ce], miniasm finishes the assembly,
-including reads overlapping, in less than 30 minutes with 16 CPUs. The total
-assembly size is 106Mb; the N50 is 1.79Mb. In comparison, the [HGAP3][hgap]
-produces a 104Mb assembly with N50 1.61Mb. [This dotter plot][ce-img] gives
-a global view of the miniasm assembly (on the X axis) and the HGAP3 assembly
-(on Y). They are broadly comparable. Of course, the HGAP3 consensus sequences
-are much more accurate.
+For a *C. elegans* [PacBio data set][ce] (only 40X are used, not the whole
+dataset), miniasm finishes the assembly, including reads overlapping, in ~10
+minutes with 16 CPUs. The total assembly size is 105Mb; the N50 is 1.94Mb. In
+comparison, the [HGAP3][hgap] produces a 104Mb assembly with N50 1.61Mb. [This
+dotter plot][ce-img] gives a global view of the miniasm assembly (on the X
+axis) and the HGAP3 assembly (on Y). They are broadly comparable. Of course,
+the HGAP3 consensus sequences are much more accurate. In addition, on the whole
+data set (assembled in ~30 min), the miniasm N50 is reduced to 1.79Mb. Miniasm
+still needs improvements.
 
 Miniasm confirms that at least for high-coverage bacterial genomes, it is
 possible to generate long contigs from raw PacBio or ONT reads without error
