@@ -47,7 +47,7 @@ git clone https://github.com/lh3/minimap && (cd minimap && make)
 git clone https://github.com/lh3/miniasm && (cd miniasm && make)
 
 # Overlap
-minimap/minimap -Sw5 -L100 -m0 -t8 $prefix.fa.gz $prefix.fa.gz 2> $prefix.paf.gz.log | gzip -1 > $prefix.paf.gz
+minimap/minimap -Sw5 -L100 -m0 -t8 -I6G $prefix.fa.gz $prefix.fa.gz 2> $prefix.paf.gz.log | gzip -1 > $prefix.paf.gz
 
 # Layout
 miniasm/miniasm -f $prefix.fa.gz $prefix.paf.gz > $prefix.gfa 2> $prefix.gfa.log
