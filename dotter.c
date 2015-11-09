@@ -48,7 +48,7 @@ KSORT_INIT(dt, srtaux_t, srtaux_lt)
 int main(int argc, char *argv[])
 {
 	int min_span = 1000, min_match = 40, width = 600, height;
-	int color[2] = { 0xFF0000, 0x0080FF }, font_size = 11;
+	int color[2] = { 0xFF0000, 0x0080FF }, font_size = 11, no_label = 0;
 	float min_iden = .1;
 	paf_file_t *f;
 	sdict_t *d[2];
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	kvec_t(dt_hit_t) h = {0,0,0};
 	double sx, sy;
 
-	while ((c = getopt(argc, argv, "m:i:s:w:f:")) >= 0) {
+	while ((c = getopt(argc, argv, "m:i:s:w:f:L")) >= 0) {
 		if (c == 'm') min_match = atoi(optarg);
 		else if (c == 'i') min_iden = atof(optarg);
 		else if (c == 's') min_span = atoi(optarg);
@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "  -s INT      min span [%d]\n", min_span);
 		fprintf(stderr, "  -w INT      image width [%d]\n", width);
 		fprintf(stderr, "  -f INT      font size [%d]\n", font_size);
+		fprintf(stderr, "  -L          don't print labels\n");
 		return 1;
 	}
 
@@ -111,16 +112,19 @@ int main(int argc, char *argv[])
 	eps_header(stdout, width, height, .2);
 	eps_font(stdout, "Helvetica-Narrow", font_size);
 
-	// write x label
-	eps_gray(stdout, .8);
-	for (i = 0; i < d[0]->n_seq; ++i)
-		eps_Mstr(stdout, (acclen[0][a[0][i].i] + .5 * d[0]->seq[a[0][i].i].len) * sx, font_size*.5, a[0][i].name);
-	eps_stroke(stdout);
-	fprintf(stdout, "gsave %g 0 translate 90 rotate\n", font_size*1.25);
-	for (i = 0; i < d[1]->n_seq; ++i)
-		eps_Mstr(stdout, (acclen[1][a[1][i].i] + .5 * d[1]->seq[a[1][i].i].len) * sx, 0, a[1][i].name);
-	fprintf(stdout, "grestore\n");
-	eps_stroke(stdout);
+	if (!no_label) {
+		// write x labels
+		eps_gray(stdout, .8);
+		for (i = 0; i < d[0]->n_seq; ++i)
+			eps_Mstr(stdout, (acclen[0][a[0][i].i] + .5 * d[0]->seq[a[0][i].i].len) * sx, font_size*.5, a[0][i].name);
+		eps_stroke(stdout);
+		fprintf(stdout, "gsave %g 0 translate 90 rotate\n", font_size*1.25);
+		// write y labels
+		for (i = 0; i < d[1]->n_seq; ++i)
+			eps_Mstr(stdout, (acclen[1][a[1][i].i] + .5 * d[1]->seq[a[1][i].i].len) * sx, 0, a[1][i].name);
+		fprintf(stdout, "grestore\n");
+		eps_stroke(stdout);
+	}
 
 	// write grid lines
 	eps_linewidth(stdout, .1);
