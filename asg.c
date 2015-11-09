@@ -196,6 +196,11 @@ int asg_arc_del_trans(asg_t *g, int fuzz)
  * Filter short potential unitigs *
  **********************************/
 
+#define ASG_ET_MERGEABLE 0
+#define ASG_ET_TIP       1
+#define ASG_ET_MULTI_OUT 2
+#define ASG_ET_MULTI_NEI 3
+
 static inline int asg_is_utg_end(const asg_t *g, uint32_t v, uint64_t *lw)
 {
 	uint32_t w, nv, nw, nw0, nv0 = asg_arc_n(g, v^1);
@@ -203,16 +208,16 @@ static inline int asg_is_utg_end(const asg_t *g, uint32_t v, uint64_t *lw)
 	asg_arc_t *aw, *av = asg_arc_a(g, v^1);
 	for (i = nv = 0; i < nv0; ++i)
 		if (!av[i].del) i0 = i, ++nv;
-	if (nv == 0) return 1; // tip
-	if (nv > 1) return 2; // multiple outgoing arcs
+	if (nv == 0) return ASG_ET_TIP; // tip
+	if (nv > 1) return ASG_ET_MULTI_OUT; // multiple outgoing arcs
 	if (lw) *lw = av[i0].ul<<32 | av[i0].v;
 	w = av[i0].v ^ 1;
 	nw0 = asg_arc_n(g, w);
 	aw = asg_arc_a(g, w);
 	for (i = nw = 0; i < nw0; ++i)
 		if (!aw[i].del) ++nw;
-	if (nw != 1) return 3;
-	return 0;
+	if (nw != 1) return ASG_ET_MULTI_NEI;
+	return ASG_ET_MERGEABLE;
 }
 
 int asg_extend(const asg_t *g, uint32_t v, int max_ext, asg64_v *a)
@@ -236,11 +241,10 @@ int asg_cut_tip(asg_t *g, int max_ext)
 	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
 	for (v = 0; v < n_vtx; ++v) {
 		if (g->seq[v>>1].del) continue;
-		if (asg_is_utg_end(g, v, 0) != 1) continue; // not a tip
-		if (asg_extend(g, v, max_ext, &a) == 0) continue; // not a short unitig
+		if (asg_is_utg_end(g, v, 0) != ASG_ET_TIP) continue; // not a tip
+		if (asg_extend(g, v, max_ext, &a) == ASG_ET_MERGEABLE) continue; // not a short unitig
 		for (i = 0; i < a.n; ++i)
 			asg_seq_del(g, (uint32_t)a.a[i]>>1);
-//			g->seq[(uint32_t)a.a[i]>>1].del = 1;
 		++cnt;
 	}
 	free(a.a);
@@ -255,8 +259,8 @@ int asg_cut_internal(asg_t *g, int max_ext)
 	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
 	for (v = 0; v < n_vtx; ++v) {
 		if (g->seq[v>>1].del) continue;
-		if (asg_is_utg_end(g, v, 0) != 3) continue;
-		if (asg_extend(g, v, max_ext, &a) != 3) continue;
+		if (asg_is_utg_end(g, v, 0) != ASG_ET_MULTI_NEI) continue;
+		if (asg_extend(g, v, max_ext, &a) != ASG_ET_MULTI_NEI) continue;
 		for (i = 0; i < a.n; ++i)
 			asg_seq_del(g, (uint32_t)a.a[i]>>1);
 		++cnt;
