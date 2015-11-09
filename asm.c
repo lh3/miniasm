@@ -78,7 +78,7 @@ void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE 
 {
 	uint32_t i, j, l;
 	char name[32];
-	for (i = 0; i < ug->u.n; ++i) {
+	for (i = 0; i < ug->u.n; ++i) { // the Segment lines in GFA
 		ma_utg_t *p = &ug->u.a[i];
 		sprintf(name, "utg%.6d%c", i + 1, "lc"[p->circ]);
 		fprintf(fp, "S\t%s\t%s\tLN:i:%d\n", name, p->s? p->s : "*", p->len);
@@ -88,12 +88,12 @@ void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE 
 			else fprintf(fp, "a\t%s\t%d\t%s\t%c\t%d\n", name, l, d->seq[x].name, "+-"[p->a[j]>>32&1], (uint32_t)p->a[j]);
 		}
 	}
-	for (i = 0; i < ug->g->n_arc; ++i) {
+	for (i = 0; i < ug->g->n_arc; ++i) { // the Link lines in GFA
 		uint32_t u = ug->g->arc[i].ul>>32, v = ug->g->arc[i].v;
 		fprintf(fp, "L\tutg%.6d%c\t%c\tutg%.6d%c\t%c\t%dM\tSD:i:%d\n", (u>>1)+1, "lc"[ug->u.a[u>>1].circ], "+-"[u&1],
 				(v>>1)+1, "lc"[ug->u.a[v>>1].circ], "+-"[v&1], ug->g->arc[i].ol, asg_arc_len(ug->g->arc[i]));
 	}
-	for (i = 0; i < ug->u.n; ++i) {
+	for (i = 0; i < ug->u.n; ++i) { // summary of unitigs
 		uint32_t cnt[2];
 		ma_utg_t *u = &ug->u.a[i];
 		if (u->start == UINT32_MAX) {

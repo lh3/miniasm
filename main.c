@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r60"
+#define MA_VERSION "r70"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -155,8 +155,9 @@ int main(int argc, char *argv[])
 			}
 		}
 		if (stage >= 10) {
-			fprintf(stderr, "[M::%s] ===> Step 4.4: removing short internal sequences <===\n", __func__);
+			fprintf(stderr, "[M::%s] ===> Step 4.4: removing short internal sequences and bi-loops <===\n", __func__);
 			asg_cut_internal(sg, 1);
+			asg_cut_biloop(sg, opt.max_ext);
 			asg_cut_tip(sg, opt.max_ext);
 			asg_pop_bubble(sg, opt.bub_dist);
 		}

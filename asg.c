@@ -271,6 +271,39 @@ int asg_cut_internal(asg_t *g, int max_ext)
 	return cnt;
 }
 
+int asg_cut_biloop(asg_t *g, int max_ext)
+{
+	asg64_v a = {0,0,0};
+	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
+	for (v = 0; v < n_vtx; ++v) {
+		uint32_t nv, nw, w, x, ov = 0, ox = 0;
+		asg_arc_t *av, *aw;
+		if (g->seq[v>>1].del) continue;
+		if (asg_is_utg_end(g, v, 0) != ASG_ET_MULTI_NEI) continue;
+		if (asg_extend(g, v, max_ext, &a) != ASG_ET_MULTI_OUT) continue;
+		x = (uint32_t)a.a[a.n - 1] ^ 1;
+		nv = asg_arc_n(g, v ^ 1), av = asg_arc_a(g, v ^ 1);
+		for (i = 0; i < nv; ++i)
+			if (!av[i].del) w = av[i].v ^ 1;
+		nw = asg_arc_n(g, w), aw = asg_arc_a(g, w);
+		for (i = 0; i < nw; ++i) { // we are looking for: v->...->x', w->v and w->x
+			if (aw[i].del) continue;
+			if (aw[i].v == x) ox = aw[i].ol;
+			if (aw[i].v == v) ov = aw[i].ol;
+		}
+		if (ov == 0 && ox == 0) continue;
+		if (ov > ox) {
+			asg_arc_del(g, w, x, 1);
+			asg_arc_del(g, x^1, w^1, 1);
+			++cnt;
+		}
+	}
+	free(a.a);
+	if (cnt > 0) asg_cleanup(g);
+	fprintf(stderr, "[M::%s] cut %d small bi-loops\n", __func__, cnt);
+	return cnt;
+}
+
 /******************
  * Bubble popping *
  ******************/
