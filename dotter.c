@@ -10,12 +10,13 @@
 typedef struct {
 	uint32_t qn, qs, qe;
 	uint32_t tn, ts, te;
+	uint32_t ml;
 } dt_hit_t;
 
 typedef struct {
 	const char *name;
 	uint32_t i;
-} srtaux_t;
+} srtx_t;
 
 static inline int mixed_numcompare(const char *_a, const char *_b)
 {
@@ -42,8 +43,8 @@ static inline int mixed_numcompare(const char *_a, const char *_b)
 }
 
 #include "ksort.h"
-#define srtaux_lt(a, b) (mixed_numcompare((a).name, (b).name) < 0)
-KSORT_INIT(dt, srtaux_t, srtaux_lt)
+#define srtx_lt(a, b) (mixed_numcompare((a).name, (b).name) < 0)
+KSORT_INIT(dtx, srtx_t, srtx_lt)
 
 int main(int argc, char *argv[])
 {
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
 	paf_rec_t r;
 	int32_t c, i, j;
 	uint64_t *acclen[2], totlen[2];
-	srtaux_t *a[2];
+	srtx_t *a[2];
 	kvec_t(dt_hit_t) h = {0,0,0};
 	double sx, sy;
 
@@ -91,16 +92,17 @@ int main(int argc, char *argv[])
 		s->qn = sd_put(d[0], r.qn, r.ql), s->qs = r.qs, s->qe = r.qe;
 		s->tn = sd_put(d[1], r.tn, r.tl);
 		s->ts = r.rev? r.te : r.ts, s->te = r.rev? r.ts : r.te;
+		s->ml = r.ml;
 	}
 	paf_close(f);
 
 	for (i = 0; i < 2; ++i) {
 		uint32_t n = d[i]->n_seq;
 		uint64_t l = 0;
-		a[i] = (srtaux_t*)calloc(n + 1, sizeof(srtaux_t));
+		a[i] = (srtx_t*)calloc(n + 1, sizeof(srtx_t));
 		for (j = 0; j < n; ++j)
 			a[i][j].name = d[i]->seq[j].name, a[i][j].i = j;
-		ks_introsort_dt(d[i]->n_seq, a[i]);
+		ks_introsort_dtx(d[i]->n_seq, a[i]);
 		acclen[i] = (uint64_t*)calloc(n, 8);
 		for (j = 0; j < n; ++j)
 			acclen[i][a[i][j].i] = l, l += d[i]->seq[a[i][j].i].len;
