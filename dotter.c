@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 		else if (c == 's') min_span = atoi(optarg);
 		else if (c == 'w') width = atoi(optarg);
 		else if (c == 'f') font_size = atoi(optarg);
+		else if (c == 'L') no_label = 1;
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: minidot [options] <in.paf>\n");
@@ -111,10 +112,10 @@ int main(int argc, char *argv[])
 
 	eps_header(stdout, width, height, .2);
 	eps_font(stdout, "Helvetica-Narrow", font_size);
+	eps_gray(stdout, .8);
 
 	if (!no_label) {
 		// write x labels
-		eps_gray(stdout, .8);
 		for (i = 0; i < d[0]->n_seq; ++i)
 			eps_Mstr(stdout, (acclen[0][a[0][i].i] + .5 * d[0]->seq[a[0][i].i].len) * sx, font_size*.5, a[0][i].name);
 		eps_stroke(stdout);
