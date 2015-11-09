@@ -276,7 +276,7 @@ int asg_cut_biloop(asg_t *g, int max_ext)
 	asg64_v a = {0,0,0};
 	uint32_t n_vtx = g->n_seq * 2, v, i, cnt = 0;
 	for (v = 0; v < n_vtx; ++v) {
-		uint32_t nv, nw, w, x, ov = 0, ox = 0;
+		uint32_t nv, nw, w = UINT32_MAX, x, ov = 0, ox = 0;
 		asg_arc_t *av, *aw;
 		if (g->seq[v>>1].del) continue;
 		if (asg_is_utg_end(g, v, 0) != ASG_ET_MULTI_NEI) continue;
@@ -285,6 +285,7 @@ int asg_cut_biloop(asg_t *g, int max_ext)
 		nv = asg_arc_n(g, v ^ 1), av = asg_arc_a(g, v ^ 1);
 		for (i = 0; i < nv; ++i)
 			if (!av[i].del) w = av[i].v ^ 1;
+		assert(w != UINT32_MAX);
 		nw = asg_arc_n(g, w), aw = asg_arc_a(g, w);
 		for (i = 0; i < nw; ++i) { // we are looking for: v->...->x', w->v and w->x
 			if (aw[i].del) continue;

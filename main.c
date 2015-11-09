@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r70"
+#define MA_VERSION "r71"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
