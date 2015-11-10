@@ -1,0 +1,53 @@
+\documentclass{bioinfo}
+\copyrightyear{2015}
+\pubyear{2015}
+
+\usepackage{amsmath}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{natbib}
+
+\bibliographystyle{apalike}
+
+\begin{document}
+\firstpage{1}
+
+\title[Long-read mapping and assembly]{Minimap and miniasm: fast mapping and de novo assembly for noisy long sequences}
+\author[Li]{Heng Li}
+\address{Broad Institute, 75 Ames Street, Cambridge, MA 02142, USA}
+\maketitle
+
+\begin{methods}
+
+\section{Methods}
+
+\subsection{Mapping}
+
+\subsection{Assembly graph}
+
+Let $\Sigma=\{\mathrm{A},\mathrm{C},\mathrm{G},\mathrm{T}\}$ be the
+alphabet of nucleotides. If symbol $a\in\Sigma$, $\overline{a}$ is the
+Watson-Crick complement of $a$. For a string $v=a_1a_2\cdots a_n$ over
+$\Sigma$, which is also called a \emph{DNA sequence}, its \emph{reverse
+complement} is $\overline{v}=\overline{a_1a_2\cdots
+a_n}=\overline{a}_n\overline{a}_{n-1}\cdots\overline{a}_1$.
+
+Two strings $v$ and $w$ may be mapped to each other based on their sequence
+similarity. If $v$ can be mapped to a substring of $w$, we say $w$
+\emph{contains} $v$. If a suffix of $v$ and a prefix of $w$ can be mapped to
+each other, we say $v$ \emph{overlaps} $w$, or written as $v\to w$.
+If we regard strings $v$ and $w$ as vertices, the overlap relationship defines
+a directed edge between them. The \emph{length} of $v\to w$ equals the length
+of $v$'s prefix that does not overlap $w$.
+
+Let $G=(V,E,\ell)$ be a simple graph (i.e. no multi-edges or loops), where $V$ is a
+set of DNA sequences (vertices), $E$ a set of overlaps between them (edges) and
+$\ell:E\to\Re_+$ is the edge length fuction. $G$ is said to be
+\emph{Watson-Crick complete} if i) $\forall v\in V$, $\overline{v}\in V$ and
+ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
+be \emph{containment-free} if any sequence $v$ is not contained in other
+sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
+is an \emph{assembly graph}.
+
+\end{methods}
+
+\end{document}
