@@ -245,12 +245,12 @@
   {%
   \def\@oddfoot{\vbox to 13\p@{\hbox{\rule{\textwidth}{1\p@}}\vss
         \hbox to \textwidth{\helvetica
-        \fontsize{7}{9}\fontshape{n}\selectfont \copyright\space Oxford University Press \@copyrightyear.%
+        \fontsize{7}{9}\fontshape{n}\selectfont%
           \hfill\small\helveticabold\thepage}%
         }}%
-  \def\@evenfoot{\vbox to 13\p@{\rule{\textwidth}{1\p@}\vss
+  \def\@evenfoot{\vbox to 13\p@{\rule{\textwidth}\vss
         \hbox to \textwidth{\helvetica\thepage\hfill
-          \fontsize{7}{9}\fontshape{n}\selectfont \copyright\space Oxford University Press \@copyrightyear.}%
+          \fontsize{7}{9}\fontshape{n}\selectfont}%
         }}%
   \let\@evenhead\relax
   \let\@oddhead\relax}
@@ -461,7 +461,7 @@
 \enskip  \parbox[b]{11.3pc}{%
     \helvetica
     \flushright\fontsize{8}{10}\fontshape{it}\selectfont
-        \hfill Pages \thepagerange
+        \hfill
   }}
   \rule{\textwidth}{1\p@}\par%
   \helvetica
