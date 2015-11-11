@@ -54,7 +54,7 @@ the minimizer hits and then report significant clusters.
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Parameter $w$ and $k$ and sequence $s$ with $|s|\ge w+k-1$}
-\KwOut{Set of ($w$,$k$)-minimizers $M_{wk}(s)$}
+\KwOut{($w$,$k$)-minimizers, their positions and strands}
 \BlankLine
 \textbf{Function} {\sc MinizerSketch}$(s,w,k)$
 \Begin {
@@ -81,13 +81,12 @@ the minimizer hits and then report significant clusters.
 \caption{Compute minimizers}
 \end{algorithm}
 
-Loosly speaking, a ($w$,$k$)-minimizer on a string $s$ is the smallest $k$-mer
+Loosly speaking, a ($w$,$k$)-minimizer of a string $s$ is the smallest $k$-mer
 in a window of $w$ consecutive $k$-mers on both strands. Algorithm~1 gives the
-precise computation of $M(s)$, the set of minimizers of $s$. In the algorithm,
-$\phi:\Sigma^k\to\mathbb{Z}$ is a function that maps any $k$-mer to an integer.
-A natural choice of $\phi$ is to let $\phi(\mathrm{A})=0$,
-$\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and $\phi(\mathrm{T})=3$ and for a
-$k$-mer $s=a_1\cdots a_k$, define
+precise computation. In the algorithm, $\phi:\Sigma^k\to\mathbb{Z}$ is a
+function that maps any $k$-mer to an integer.  A natural choice of $\phi$ is to
+let $\phi(\mathrm{A})=0$, $\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and
+$\phi(\mathrm{T})=3$ and for a $k$-mer $s=a_1\cdots a_k$, define
 $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
@@ -110,11 +109,11 @@ same $2k$-bit integer, it helps to reduce hash collisions.
 \Begin {
 	$m\gets2^p-1$\;
 	$x\gets(\mbox{\tt\char126}x+(x\mbox{\tt\char60\char60}21))\mbox{ \tt\char38}\mbox{ }m$\;
-	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}24$\;
+	$x\gets x\mbox{ \tt\char94}\mbox{ }x\mbox{\tt\char62\char62}24$\;
 	$x\gets(x+(x\mbox{\tt\char60\char60}3)+(x\mbox{\tt\char60\char60}8))\mbox{ \tt\char38}\mbox{ }m$\;
-	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}14$\;
+	$x\gets x\mbox{ \tt\char94}\mbox{ }x\mbox{\tt\char62\char62}14$\;
 	$x\gets(x+(x\mbox{\tt\char60\char60}2)+(x\mbox{\tt\char60\char60}4))\mbox{ \tt\char38}\mbox{ }m$\;
-	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}28$\;
+	$x\gets x\mbox{ \tt\char94}\mbox{ }x\mbox{\tt\char62\char62}28$\;
 	$x\gets(x+(x\mbox{\tt\char60\char60}31))\mbox{ \tt\char38}\mbox{ }m$\;
 	\Return $x$\;
 }
@@ -122,8 +121,9 @@ same $2k$-bit integer, it helps to reduce hash collisions.
 \end{algorithm}
 
 Note that in a window of $w$ consecutive $k$-mers, there may be more than one
-minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes
-$M(s)=M(\overline{s})$ always stand. \citet{Roberts:2004fv} did not discuss
+minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes the
+number of minimizers computed for $s$ always the same as the number of
+minimizers computed for $\overline{s}$. \citet{Roberts:2004fv} did not discuss
 the treatment of such equally good minimizers.
 
 Algorithm~1 has $O(w\cdot|s|)$ time complexity. Our actual implementation is
@@ -154,9 +154,9 @@ collecting minimizers does not take significant time.
 \end{algorithm}
 
 Algorithm~3 describes target indexing. It keeps minimizers in all target
-sequences in a hash table where the key is the minimizer hash value and the
-value is the index of target sequence, the position of the minimizer and the
-strand (packed into one 64-bit integer).
+sequences in a hash table where the key is the minimizer hash and the value is
+a set of target sequence index, the position of the minimizer and the strand
+(packed into one 64-bit integer).
 
 In implementation, we do not directly insert minimizers to the hash table.
 Instead, we append minimizers to multiple lists, merge them after collecting
