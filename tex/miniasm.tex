@@ -121,15 +121,15 @@ same $2k$-bit integer, it helps to reduce hash collisions.
 \end{algorithm}
 
 Note that in a window of $w$ consecutive $k$-mers, there may be more than one
-minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes the
-number of minimizers computed for $s$ always the same as the number of
-minimizers computed for $\overline{s}$. \citet{Roberts:2004fv} did not discuss
-the treatment of such equally good minimizers.
+minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes a
+minimizer of $s$ always correspond to a minimizer of $\overline{s}$.
+\citet{Roberts:2004fv} did not discuss the treatment of such equally good
+minimizers.
 
 Algorithm~1 has $O(w\cdot|s|)$ time complexity. Our actual implementation is
-close to $O(|s|)$ in average case. It uses a queue to keep the previous
+close to $O(|s|)$ in average case. It uses a queue to cache the previous
 minimals and avoids the loops at line~1 and~2 most of time. In practice,
-collecting minimizers does not take significant time.
+time spent on collecting minimizers is insignificant.
 
 \subsubsection{Indexing}
 
