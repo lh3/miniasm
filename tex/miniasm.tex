@@ -4,6 +4,10 @@
 
 \usepackage{amsmath}
 \usepackage[ruled,vlined]{algorithm2e}
+\newcommand\mycommfont[1]{\footnotesize\rmfamily{\it #1}}
+\SetCommentSty{mycommfont}
+\SetKwComment{Comment}{$\triangleright$\ }{}
+
 \usepackage{natbib}
 
 \bibliographystyle{apalike}
@@ -20,16 +24,183 @@
 
 \section{Methods}
 
-\subsection{Mapping}
-
-\subsection{Assembly graph}
+\subsection{General notations}
 
 Let $\Sigma=\{\mathrm{A},\mathrm{C},\mathrm{G},\mathrm{T}\}$ be the
 alphabet of nucleotides. If symbol $a\in\Sigma$, $\overline{a}$ is the
-Watson-Crick complement of $a$. For a string $v=a_1a_2\cdots a_n$ over
-$\Sigma$, which is also called a \emph{DNA sequence}, its \emph{reverse
-complement} is $\overline{v}=\overline{a_1a_2\cdots
+Watson-Crick complement of $a$. For a string $s=a_1a_2\cdots a_n$ over
+$\Sigma$, which is also called a \emph{DNA sequence}, its length is $|s|=n$.
+Its \emph{reverse complement} is $\overline{s}=\overline{a_1a_2\cdots
 a_n}=\overline{a}_n\overline{a}_{n-1}\cdots\overline{a}_1$.
+For convenience, we define strand function
+$\theta:\Sigma^*\times\{0,1\}\to\Sigma^*$ such that $\theta(s,0)=s$ and
+$\theta(s,1)=\overline{s}$.
+
+By convention, we call a $k$-long DNA sequence as a $k$-mer. We use the
+notation $s^k_i=a_i\cdots a_{i+k-1}$ to denote a $k$-long substring of $s$
+starting at $i$.
+
+\subsection{Mapping}
+
+Minimap uses a hash table based mapping algorithm. It has an indexing and
+a mapping phase. In the indexing phase, minimap collects minimizers of each
+target sequence and store them in a hash table. In the mapping phase, it
+computess minimizers of query sequences, look up the target hash table, cluster
+the minimizer hits and then report significant clusters.
+
+\subsubsection{Computing minimizers}
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{Parameter $w$ and $k$ and sequence $s$ with $|s|\ge w+k-1$}
+\KwOut{Set of ($w$,$k$)-minimizers $M_{wk}(s)$}
+\BlankLine
+\textbf{Function} {\sc MinizerSketch}$(s,w,k)$
+\Begin {
+	$M\gets\emptyset$\Comment*[r]{NB: $M$ is a set; no duplicates}
+	\For{$i\gets1$ \KwTo $|s|-w-k+1$} {
+		$m\gets\infty$\;
+		\nl\For (\Comment*[f]{Find the min value}) {$j\gets0$ \KwTo $w-1$} {
+			$(u,v)\gets(\phi(s^k_{i+j}),\phi(\overline{s}^k_{i+j}))$\;
+			\If (\Comment*[f]{Skip if strand ambiguous}) {$u\not=v$} { 
+				$m\gets\min(m,\min(u,v))$\;
+			}
+		}
+		\nl\For (\Comment*[f]{Collect minimizers}) {$j\gets0$ \KwTo $w-1$} {
+			$(u,v)\gets(\phi(s^k_{i+j}),\phi(\overline{s}^k_{i+j}))$\;
+			\uIf{$u<v$ {\bf and} $u=m$} {
+				$M\gets M\cup\{(m,i+j,0)\}$\;
+			}\ElseIf{$v<u$ {\bf and} $v=m$}{
+				$M\gets M\cup\{(m,i+j,1)\}$\;
+			}
+		}
+	}
+	\Return $M$\;
+}
+\caption{Compute minimizers}
+\end{algorithm}
+
+Loosly speaking, a ($w$,$k$)-minimizer on a string $s$ is the smallest $k$-mer
+in a window of $w$ consecutive $k$-mers on both strands. Algorithm~1 gives the
+precise computation of $M(s)$, the set of minimizers of $s$. In the algorithm,
+$\phi:\Sigma^k\to\mathbb{Z}$ is a function that maps any $k$-mer to an integer.
+A natural choice of $\phi$ is to let $\phi(\mathrm{A})=0$,
+$\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and $\phi(\mathrm{T})=3$ and for a
+$k$-mer $s=a_1\cdots a_k$, define
+$$
+\phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
+$$
+With such a function, ploy-A always gets zero, the smallest value.  As genomes
+are usually enriched with poly-A. This function may oversample these
+non-informative poly-A and hurts practical performance. To alleviate this
+issue, we use $\phi'=h\circ\phi$ instead, where $h$ is an invertible integer
+hash function on $[0,4^k)$ as is implemented with Algorithm~2
+(http://bit.ly/invihgi). The invertibility of $h$ is not critical to the
+computation of minimizers, but as such $\phi'$ never maps two $k$-mers to the
+same $2k$-bit integer, it helps to reduce hash collisions.
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{$p$-bit integer $x$}
+\KwOut{hashed $p$-bit integer}
+\BlankLine
+\textbf{Function} {\sc InvertibleHash}$(x,p)$
+\Begin {
+	$m\gets2^p-1$\;
+	$x\gets(\mbox{\tt\char126}x+(x\mbox{\tt\char60\char60}21))\mbox{ \tt\char38}\mbox{ }m$\;
+	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}24$\;
+	$x\gets(x+(x\mbox{\tt\char60\char60}3)+(x\mbox{\tt\char60\char60}8))\mbox{ \tt\char38}\mbox{ }m$\;
+	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}14$\;
+	$x\gets(x+(x\mbox{\tt\char60\char60}2)+(x\mbox{\tt\char60\char60}4))\mbox{ \tt\char38}\mbox{ }m$\;
+	$x\gets x\mbox{\tt\char94}x\mbox{\tt\char62\char62}28$\;
+	$x\gets(x+(x\mbox{\tt\char60\char60}31))\mbox{ \tt\char38}\mbox{ }m$\;
+	\Return $x$\;
+}
+\caption{Invertible integer hash function}
+\end{algorithm}
+
+Note that in a window of $w$ consecutive $k$-mers, there may be more than one
+minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes
+$M(s)=M(\overline{s})$ always stand. \citet{Roberts:2004fv} did not discuss
+the treatment of such equally good minimizers.
+
+Algorithm~1 has $O(w\cdot|s|)$ time complexity. Our actual implementation is
+close to $O(|s|)$ in average case. It uses a queue to keep the previous
+minimals and avoids the loops at line~1 and~2 most of time. In practice,
+collecting minimizers does not take significant time.
+
+\subsubsection{Indexing}
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{Set of target sequences $\mathcal{T}=\{s_1,\ldots,s_T\}$}
+\KwOut{Minimizer hash table $\mathcal{H}$}
+\BlankLine
+\textbf{Function} {\sc Index}$(\mathcal{T},w,k)$
+\Begin {
+	Initialize $\mathcal{H}$ as an empty hash table\;
+	\For{$t\gets1$ \KwTo $T$} {
+		$M\gets${\sc MinizerSketch}$(s_t,w,k)$\;
+		\ForEach{$(h,i,r)\in M$} {
+			$\mathcal{H}[h]\gets\mathcal{H}[h]\cup\{(t,i,r)\}$\;
+		}
+	}
+	\Return $\mathcal{H}$\;
+}
+\caption{Index target sequences}
+\end{algorithm}
+
+Algorithm~3 describes target indexing. It keeps minimizers in all target
+sequences in a hash table where the key is the minimizer hash value and the
+value is the index of target sequence, the position of the minimizer and the
+strand (packed into one 64-bit integer).
+
+In implementation, we do not directly insert minimizers to the hash table.
+Instead, we append minimizers to multiple lists, merge them after collecting
+all minimizers and radix sort the merged list. The hash table keeps the
+intervals on the merged list. This procedure is inspired
+by~\citet{DBLP:conf/wabi/Myers14}. It dramatically reduces heap allocations and
+cache misses, and is supposedly faster than direct hash table insertion.
+
+\subsubsection{Mapping}
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{Hash table $\mathcal{H}$ and query sequence $q$}
+\KwOut{Print matching query and target intervals}
+\BlankLine
+\textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,g)$
+\Begin {
+	Initialize $\mathcal{A}$ as an empty array\;
+	$M\gets${\sc MinizerSketch}$(q,w,k)$\;
+	\ForEach (\Comment*[f]{Collect minimizer matches}) {$(h,i,r)\in M$} {
+		\ForEach{$(t,i',r')\in \mathcal{H}[h]$} {
+			\uIf (\Comment*[f]{Minimizers on the same strand}) {$r=r'$} {
+				$x\gets t${\tt\char60\char60}32 {\tt\char124} $(|q|-i+i')$
+			} \Else (\Comment*[f]{On different strands}) {
+				$x\gets{\tt1ULL}${\tt\char60\char60}63 {\tt\char124} $t${\tt\char60\char60}32 {\tt\char124} $(i+i')$
+			}
+			Append $(x,t,i',i)$ to $\mathcal{A}$\;
+		}
+	}
+	Sort $\mathcal{A}=[(x,t,i',i)]$ by $x$\;
+	$b\gets1$\;
+	\For (\Comment*[f]{Cluster minimizer matches}) {$e=1$ \KwTo $|\mathcal{A}|$} {
+		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].x-\mathcal{A}[e].x>g$} {
+			Find the maximal colinear subset $\mathcal{C}\subset\mathcal{A}[b..e]$\;
+			Print the left- and right-most query/target positions in $\mathcal{C}$\;
+			$b\gets e+1$\;
+		}
+	}
+}
+\caption{Map a query sequence}
+\end{algorithm}
+
+\subsection{Assembly graph}
 
 Two strings $v$ and $w$ may be mapped to each other based on their sequence
 similarity. If $v$ can be mapped to a substring of $w$, we say $w$
@@ -48,6 +219,9 @@ be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
 is an \emph{assembly graph}.
 
+\subsection{Assembly}
+
 \end{methods}
 
+\bibliography{miniasm}
 \end{document}
