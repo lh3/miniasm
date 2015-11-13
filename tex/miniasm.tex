@@ -29,24 +29,39 @@
 Let $\Sigma=\{\mathrm{A},\mathrm{C},\mathrm{G},\mathrm{T}\}$ be the
 alphabet of nucleotides. If symbol $a\in\Sigma$, $\overline{a}$ is the
 Watson-Crick complement of $a$. For a string $s=a_1a_2\cdots a_n$ over
-$\Sigma$, which is also called a \emph{DNA sequence}, its length is $|s|=n$.
-Its \emph{reverse complement} is $\overline{s}=\overline{a_1a_2\cdots
+$\Sigma$, which is also called a \emph{DNA sequence}, its length is $|s|=n$;
+its \emph{reverse complement} is $\overline{s}=\overline{a_1a_2\cdots
 a_n}=\overline{a}_n\overline{a}_{n-1}\cdots\overline{a}_1$.
 For convenience, we define strand function
-$\theta:\Sigma^*\times\{0,1\}\to\Sigma^*$ such that $\theta(s,0)=s$ and
-$\theta(s,1)=\overline{s}$.
+$\pi:\Sigma^*\times\{0,1\}\to\Sigma^*$ such that $\pi(s,0)=s$ and
+$\pi(s,1)=\overline{s}$.
 
 By convention, we call a $k$-long DNA sequence as a $k$-mer. We use the
 notation $s^k_i=a_i\cdots a_{i+k-1}$ to denote a $k$-long substring of $s$
 starting at $i$.
 
-\subsection{Mapping}
+\subsection{Minimap}
 
-Minimap uses a hash table based mapping algorithm. It has an indexing and
-a mapping phase. In the indexing phase, minimap collects minimizers of each
-target sequence and store them in a hash table. In the mapping phase, it
-computess minimizers of query sequences, look up the target hash table, cluster
-the minimizer hits and then report significant clusters.
+\subsubsection{Overview of algorithm}
+
+Loosely speaking, a $(w,k)$-minimizer \citep{Roberts:2004fv} of a string is the
+smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. If
+sequence $s'$ is a subsequence of $s$, the minimizers of $s'$ will be a subset
+of the minimizers of $s$. If $s'$ and $s$ are close, the number of shared
+colinear minimizers between them approximately measures their similarity. In
+this sense, the set of minimizers of $s$ is a (possibly reduced) representation
+of $s$. When we map a query sequence against a set of target sequences, we may
+construct a hash table for all target minimizers and then look up for query
+minimizers. Large clusters of colinear minimizer matches imply potential
+mappings.
+
+%A similar and more popular concept is $(w,k)$-mer, which is used by many
+%aligners such as BLAT and SSAHA2. A $(w,k)$-mer of a string $s$ is a $k$-mer
+%starting at position $iw$, $i\le\lfloor(|s|-k+1)/w\rfloor$. If we construct a
+%hash table for all $(w,k)$-mers of target sequences, we need to look up for
+%every query $k$-mer, not just the $(w,k)$-mers of the query -- in contrast, if
+%we use minimizers, we only look up for query minimizers, not every $k$-mer.
+%Minimizer-based mapping tends to be more efficient.
 
 \subsubsection{Computing minimizers}
 
@@ -58,7 +73,7 @@ the minimizer hits and then report significant clusters.
 \BlankLine
 \textbf{Function} {\sc MinizerSketch}$(s,w,k)$
 \Begin {
-	$M\gets\emptyset$\Comment*[r]{NB: $M$ is a set; no duplicates}
+	$\mathcal{M}\gets\emptyset$\Comment*[r]{NB: $M$ is a set; no duplicates}
 	\For{$i\gets1$ \KwTo $|s|-w-k+1$} {
 		$m\gets\infty$\;
 		\nl\For (\Comment*[f]{Find the min value}) {$j\gets0$ \KwTo $w-1$} {
@@ -70,9 +85,9 @@ the minimizer hits and then report significant clusters.
 		\nl\For (\Comment*[f]{Collect minimizers}) {$j\gets0$ \KwTo $w-1$} {
 			$(u,v)\gets(\phi(s^k_{i+j}),\phi(\overline{s}^k_{i+j}))$\;
 			\uIf{$u<v$ {\bf and} $u=m$} {
-				$M\gets M\cup\{(m,i+j,0)\}$\;
+				$\mathcal{M}\gets\mathcal{M}\cup\{(m,i+j,0)\}$\;
 			}\ElseIf{$v<u$ {\bf and} $v=m$}{
-				$M\gets M\cup\{(m,i+j,1)\}$\;
+				$\mathcal{M}\gets\mathcal{M}\cup\{(m,i+j,1)\}$\;
 			}
 		}
 	}
@@ -81,23 +96,34 @@ the minimizer hits and then report significant clusters.
 \caption{Compute minimizers}
 \end{algorithm}
 
-Loosly speaking, a ($w$,$k$)-minimizer of a string $s$ is the smallest $k$-mer
-in a window of $w$ consecutive $k$-mers on both strands. Algorithm~1 gives the
-precise computation. In the algorithm, $\phi:\Sigma^k\to\mathbb{Z}$ is a
-function that maps any $k$-mer to an integer.  A natural choice of $\phi$ is to
-let $\phi(\mathrm{A})=0$, $\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and
-$\phi(\mathrm{T})=3$ and for a $k$-mer $s=a_1\cdots a_k$, define
+Let $\phi:\Sigma^k\to\mathbb{Z}$ be a function that maps any $k$-mer to an integer.
+Formally, a double-strand $(w,k,\phi)$-minimizer, or simply a minimizer, of a
+string $s$, $|s|\ge w+k-1$, is a triple $(h,i,r)$ such that there exists
+$\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which makes
+$$
+h=\phi(\pi(s_i^k,r))=\min\big\{\phi(\pi(s_{j+p}^k,r')):0\le p<w,r'\in\{0,1\}\big\}
+$$
+Let $\mathcal{M}(s)$ be the set of minimizers of $s$.  Algorithm~1 gives the
+pseudocode to compute $\mathcal{M}(s)$ in $O(w\cdot|s|)$ time.  Our actual
+implementation is close to $O(|s|)$ in average case. It uses a queue to cache
+the previous minimals and avoids the loops at line~1 and~2 most of time. In
+practice, time spent on collecting minimizers is insignificant.
+
+A natural choice of $\phi$ is to let $\phi(\mathrm{A})=0$,
+$\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and $\phi(\mathrm{T})=3$ and for a
+$k$-mer $s=a_1\cdots a_k$, define
 $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
-With such a function, ploy-A always gets zero, the smallest value.  As genomes
-are usually enriched with poly-A. This function may oversample these
-non-informative poly-A and hurts practical performance. To alleviate this
-issue, we use $\phi'=h\circ\phi$ instead, where $h$ is an invertible integer
-hash function on $[0,4^k)$ as is implemented with Algorithm~2
-(http://bit.ly/invihgi). The invertibility of $h$ is not critical to the
-computation of minimizers, but as such $\phi'$ never maps two $k$-mers to the
-same $2k$-bit integer, it helps to reduce hash collisions.
+It always maps a $k$-mer to a distinct integer. A problem with this function is
+that ploy-A, which is often highly enriched in genomes, always gets zero, the
+smallest value. The function may oversample these non-informative poly-A and
+hurts practical performance. To alleviate this issue, we use $\phi'=h\circ\phi$
+instead, where $h$ is an invertible integer hash function on $[0,4^k)$ as is
+implemented with Algorithm~2 (http://bit.ly/invihgi). The invertibility of $h$
+is not critical to the computation of minimizers, but as such $\phi'$ never
+maps two distinct $k$-mers to the same $2k$-bit integer, it helps to reduce
+hash collisions.
 
 \begin{algorithm}[ht]
 \DontPrintSemicolon
@@ -126,11 +152,6 @@ minimizer of $s$ always correspond to a minimizer of $\overline{s}$.
 \citet{Roberts:2004fv} did not discuss the treatment of such equally good
 minimizers.
 
-Algorithm~1 has $O(w\cdot|s|)$ time complexity. Our actual implementation is
-close to $O(|s|)$ in average case. It uses a queue to cache the previous
-minimals and avoids the loops at line~1 and~2 most of time. In practice,
-time spent on collecting minimizers is insignificant.
-
 \subsubsection{Indexing}
 
 \begin{algorithm}[ht]
@@ -143,8 +164,8 @@ time spent on collecting minimizers is insignificant.
 \Begin {
 	Initialize $\mathcal{H}$ as an empty hash table\;
 	\For{$t\gets1$ \KwTo $T$} {
-		$M\gets${\sc MinizerSketch}$(s_t,w,k)$\;
-		\ForEach{$(h,i,r)\in M$} {
+		$\mathcal{M}\gets${\sc MinizerSketch}$(s_t,w,k)$\;
+		\ForEach{$(h,i,r)\in \mathcal{M}$} {
 			$\mathcal{H}[h]\gets\mathcal{H}[h]\cup\{(t,i,r)\}$\;
 		}
 	}
@@ -159,13 +180,15 @@ a set of target sequence index, the position of the minimizer and the strand
 (packed into one 64-bit integer).
 
 In implementation, we do not directly insert minimizers to the hash table.
-Instead, we append minimizers to multiple lists, merge them after collecting
-all minimizers and radix sort the merged list. The hash table keeps the
-intervals on the merged list. This procedure is inspired
-by~\citet{DBLP:conf/wabi/Myers14}. It dramatically reduces heap allocations and
-cache misses, and is supposedly faster than direct hash table insertion.
+Instead, we append minimizers to an array and sort the array after collecting
+all minimizers. The hash table keeps the intervals on the sorted array. This
+procedure dramatically reduces heap allocations and cache misses, and is
+supposedly faster than direct hash table insertion.
 
 \subsubsection{Mapping}
+
+Given two sequences $s$ and $s'$ that share a long common substring, let
+$\{(i,i')\}$ be the set of positions of matching minimizers. It 
 
 \begin{algorithm}[ht]
 \DontPrintSemicolon
@@ -176,22 +199,24 @@ cache misses, and is supposedly faster than direct hash table insertion.
 \textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,g)$
 \Begin {
 	Initialize $\mathcal{A}$ as an empty array\;
-	$M\gets${\sc MinizerSketch}$(q,w,k)$\;
-	\ForEach (\Comment*[f]{Collect minimizer matches}) {$(h,i,r)\in M$} {
+	$\mathcal{M}\gets${\sc MinizerSketch}$(q,w,k)$\;
+	\ForEach (\Comment*[f]{Collect minimizer matches}) {$(h,i,r)\in \mathcal{M}$} {
 		\ForEach{$(t,i',r')\in \mathcal{H}[h]$} {
 			\uIf (\Comment*[f]{Minimizers on the same strand}) {$r=r'$} {
-				$x\gets t${\tt\char60\char60}32 {\tt\char124} $(|q|-i+i')$
+%				$x\gets t${\tt\char60\char60}32 {\tt\char124} $(|q|-i+i')$
+				Append $(t,0,|q|-i+i',i')$ to $\mathcal{A}$\;
 			} \Else (\Comment*[f]{On different strands}) {
-				$x\gets{\tt1ULL}${\tt\char60\char60}63 {\tt\char124} $t${\tt\char60\char60}32 {\tt\char124} $(i+i')$
+%				$x\gets{\tt1ULL}${\tt\char60\char60}63 {\tt\char124} $t${\tt\char60\char60}32 {\tt\char124} $(i+i')$
+				Append $(t,1,i+i',i')$ to $\mathcal{A}$\;
 			}
-			Append $(x,t,i',i)$ to $\mathcal{A}$\;
+%			Append $(x,t,i',i)$ to $\mathcal{A}$\;
 		}
 	}
-	Sort $\mathcal{A}=[(x,t,i',i)]$ by $x$\;
+	Sort $\mathcal{A}=[(t,r,c,i')]$ in the order of the four values in tuples\;
 	$b\gets1$\;
 	\For (\Comment*[f]{Cluster minimizer matches}) {$e=1$ \KwTo $|\mathcal{A}|$} {
-		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].x-\mathcal{A}[e].x>g$} {
-			Find the maximal colinear subset $\mathcal{C}\subset\mathcal{A}[b..e]$\;
+		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].t\not=\mathcal{A}[e].t$ {\bf or} $\mathcal{A}[e+1].r\not=\mathcal{A}[e].r$ {\bf or} $\mathcal{A}[e+1].c-\mathcal{A}[e].c>g$} {
+			$\mathcal{C}\gets$the maximal colinear subset of $\mathcal{A}[b..e]$\;
 			Print the left- and right-most query/target positions in $\mathcal{C}$\;
 			$b\gets e+1$\;
 		}
@@ -199,6 +224,9 @@ cache misses, and is supposedly faster than direct hash table insertion.
 }
 \caption{Map a query sequence}
 \end{algorithm}
+
+Algorithm~4 describes how to map a query against the hash table of target
+minimizers.
 
 \subsection{Assembly graph}
 
