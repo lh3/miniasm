@@ -187,8 +187,17 @@ supposedly faster than direct hash table insertion.
 
 \subsubsection{Mapping}
 
-Given two sequences $s$ and $s'$ that share a long common substring, let
-$\{(i,i')\}$ be the set of positions of matching minimizers. It 
+Given two sequences $s$ and $s'$, we say we find a \emph{minimizer hit}
+$(h,x,i,i')$ if there exist $(h,i,r)\in\mathcal{M}(s)$ and
+$(h,i',r')\in\mathcal{M}(s')$ with $x=r\oplus r'$ ($\oplus$ is the XOR
+operator). Here $h$ is the minimizer hash value, $x$ indicates the relative
+strand and $i$ and $i'$ are the positions on the two sequences, respectively.
+We say two minimizer hits $(h_1,x,i_1,i'_1)$ and $(h_2,x,i_2,i'_2)$ are
+\emph{$\epsilon$-away} if 1) $x=0$ and $|(i_1-i'_1)-(i_2-i'_2)|<\epsilon$
+or 2) $x=1$ and $|(i_1+i'_1)-(i_2+i'_2)|<\epsilon$. Intuitively,
+$\epsilon$-away hits are approximately colinear within a band of width
+$\epsilon$.  Given a set of minimizer hits $\{(h,x,i,i')\}$, we can cluster
+$i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
 
 \begin{algorithm}[ht]
 \DontPrintSemicolon
@@ -200,11 +209,11 @@ $\{(i,i')\}$ be the set of positions of matching minimizers. It
 \Begin {
 	Initialize $\mathcal{A}$ as an empty array\;
 	$\mathcal{M}\gets${\sc MinizerSketch}$(q,w,k)$\;
-	\ForEach (\Comment*[f]{Collect minimizer matches}) {$(h,i,r)\in \mathcal{M}$} {
+	\nl\ForEach (\Comment*[f]{Collect minimizer hits}) {$(h,i,r)\in \mathcal{M}$} {
 		\ForEach{$(t,i',r')\in \mathcal{H}[h]$} {
 			\uIf (\Comment*[f]{Minimizers on the same strand}) {$r=r'$} {
 %				$x\gets t${\tt\char60\char60}32 {\tt\char124} $(|q|-i+i')$
-				Append $(t,0,|q|-i+i',i')$ to $\mathcal{A}$\;
+				Append $(t,0,i-i',i')$ to $\mathcal{A}$\;
 			} \Else (\Comment*[f]{On different strands}) {
 %				$x\gets{\tt1ULL}${\tt\char60\char60}63 {\tt\char124} $t${\tt\char60\char60}32 {\tt\char124} $(i+i')$
 				Append $(t,1,i+i',i')$ to $\mathcal{A}$\;
@@ -214,9 +223,9 @@ $\{(i,i')\}$ be the set of positions of matching minimizers. It
 	}
 	Sort $\mathcal{A}=[(t,r,c,i')]$ in the order of the four values in tuples\;
 	$b\gets1$\;
-	\For (\Comment*[f]{Cluster minimizer matches}) {$e=1$ \KwTo $|\mathcal{A}|$} {
+	\nl\For (\Comment*[f]{Cluster minimizer hits}) {$e=1$ \KwTo $|\mathcal{A}|$} {
 		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].t\not=\mathcal{A}[e].t$ {\bf or} $\mathcal{A}[e+1].r\not=\mathcal{A}[e].r$ {\bf or} $\mathcal{A}[e+1].c-\mathcal{A}[e].c>g$} {
-			$\mathcal{C}\gets$the maximal colinear subset of $\mathcal{A}[b..e]$\;
+			\nl$\mathcal{C}\gets$the maximal colinear subset of $\mathcal{A}[b..e]$\;
 			Print the left- and right-most query/target positions in $\mathcal{C}$\;
 			$b\gets e+1$\;
 		}
@@ -225,8 +234,15 @@ $\{(i,i')\}$ be the set of positions of matching minimizers. It
 \caption{Map a query sequence}
 \end{algorithm}
 
-Algorithm~4 describes how to map a query against the hash table of target
-minimizers.
+Algorithm~4 gives the details of the mapping algorithm. The loop at line~1
+collects minimizer hits between the query and all the target sequences. The
+loop at line~2 performs a single-linkage clustering to group approximately
+colinear hits. Some hits in a cluster may not be colinear because two minimizer
+hits within distance $\epsilon$ are always $\epsilon$-away. Line~3 finds the
+maximal colinear subset of hits by solving a longest increasing sequencing
+problem. This subset is the final mapping result. In practical implementation,
+we set thresholds on the size of the subset and the number of matching bases in
+the subset to filter poor mappings.
 
 \subsection{Assembly graph}
 
