@@ -238,11 +238,11 @@ Algorithm~4 gives the details of the mapping algorithm. The loop at line~1
 collects minimizer hits between the query and all the target sequences. The
 loop at line~2 performs a single-linkage clustering to group approximately
 colinear hits. Some hits in a cluster may not be colinear because two minimizer
-hits within distance $\epsilon$ are always $\epsilon$-away. Line~3 finds the
-maximal colinear subset of hits by solving a longest increasing sequencing
-problem. This subset is the final mapping result. In practical implementation,
-we set thresholds on the size of the subset and the number of matching bases in
-the subset to filter poor mappings.
+hits within distance $\epsilon$ are always $\epsilon$-away. To fix this issue,
+line~3 finds the maximal colinear subset of hits by solving a longest
+increasing sequencing problem. This subset is the final mapping result. In
+practical implementation, we set thresholds on the size of the subset and the
+number of matching bases in the subset to filter poor mappings.
 
 \subsection{Assembly graph}
 
@@ -262,6 +262,11 @@ ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
 be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
 is an \emph{assembly graph}.
+
+An assembly graph has the same topology as a string graph~\citep{Myers:2005bh},
+though the interpretation of the vertex set $V$ is different. In a string
+graph, $V$ is the set of the two ends of sequences, not the set of forward and
+reverse-complemented sequences.
 
 \subsection{Assembly}
 
