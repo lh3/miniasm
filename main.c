@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r71"
+#define MA_VERSION "r86"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -32,7 +32,7 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100, no_first = 0, no_second = 0;
+	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 0;
 	sdict_t *d;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12V")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VB")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
 		else if (c == '2') no_second = 1;
 		else if (c == 'n') opt.n_rounds = atoi(optarg);
 		else if (c == 'C') opt.cov_ratio = atof(optarg);
+		else if (c == 'B') bi_dir = 1;
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
 			return 0;
@@ -90,6 +91,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "                max and min overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.min_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
+		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n");
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
 		fprintf(stderr, "    -2          skip 2-pass read selection\n");
 		fprintf(stderr, "    -V          print version number\n");
@@ -100,7 +102,7 @@ int main(int argc, char *argv[])
 	d = sd_init();
 
 	fprintf(stderr, "[M::%s] ===> Step 1: reading read mappings <===\n", __func__);
-	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits);
+	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits, bi_dir);
 
 	if (!no_first) {
 		fprintf(stderr, "[M::%s] ===> Step 2: 1-pass (crude) read selection <===\n", __func__);

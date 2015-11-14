@@ -33,7 +33,7 @@ void ma_hit_mark_unused(sdict_t *d, int n, const ma_hit_t *a)
 	}
 }
 
-ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n)
+ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n, int bi_dir)
 {
 	paf_file_t *fp;
 	paf_rec_t r;
@@ -50,6 +50,13 @@ ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, s
 		p->qe = r.qe;
 		p->tn = sd_put(d, r.tn, r.tl);
 		p->ts = r.ts, p->te = r.te, p->rev = r.rev, p->ml = r.ml, p->bl = r.bl;
+		if (bi_dir) {
+			kv_pushp(ma_hit_t, h, &p);
+			p->qns = (uint64_t)sd_put(d, r.tn, r.tl)<<32 | r.ts;
+			p->qe = r.te;
+			p->tn = sd_put(d, r.qn, r.ql);
+			p->ts = r.qs, p->te = r.qe, p->rev = r.rev, p->ml = r.ml, p->bl = r.bl;
+		}
 	}
 	paf_close(fp);
 	for (i = 0; i < d->n_seq; ++i)
