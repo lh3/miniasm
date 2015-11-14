@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-die("Usage: da2paf.pl <(DBdump -rh reads.db) <(LAdump -cd aln.las)\n") if @ARGV < 1;
+die("Usage: ls *.las | xargs -i LAdump -cd reads.db {} | da2paf.pl <(DBdump -rh reads.db)\n") if @ARGV < 1;
 
 warn("Reading sequence lengths...\n");
 my $fn = shift(@ARGV);
