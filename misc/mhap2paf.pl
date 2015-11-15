@@ -5,10 +5,10 @@ use warnings;
 use Getopt::Std;
 
 my %opts = ();
-getopts("b", \%opts);
-my $is_double = !defined($opts{b});
+getopts("1", \%opts);
+my $is_dbl = !defined($opts{1});
 
-die("Usage: mhap2paf.pl [-b] <in.mhap>\n") if (@ARGV == 0 && -t STDIN);
+die("Usage: mhap2paf.pl [-1] <in.mhap>\n") if (@ARGV == 0 && -t STDIN);
 
 while (<>) {
 	chomp;
@@ -19,5 +19,5 @@ while (<>) {
 	my $cm = "cm:i:" . int($t[3] + .499);
 	my $rev = $t[4] == $t[8]? '+' : '-';
 	print(join("\t", @t[0,7,5,6], $rev, @t[1,11,9,10], $ml, $bl, 255, $cm), "\n");
-	print(join("\t", @t[1,11,9,10], $rev, @t[0,7,5,6], $ml, $bl, 255, $cm), "\n") if ($is_double);
+	print(join("\t", @t[1,11,9,10], $rev, @t[0,7,5,6], $ml, $bl, 255, $cm), "\n") if ($is_dbl);
 }
