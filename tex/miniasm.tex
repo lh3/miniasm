@@ -276,7 +276,7 @@ $v$ and a single sink $w$ having at least two paths between $v$ and $w$. The
 bubble is tight if ${\rm deg}^+(v)>1$ and ${\rm deg}^-(w)>1$. A bubble may be
 caused by variants between homologous haplotypes as well as missing overlaps.
 
-\subsection{Assembly}
+\subsection{Miniasm}
 
 \subsubsection{Trimming reads}
 
@@ -369,7 +369,7 @@ assembly graph.
 				$p\gets p+1$\;
 			}
 			\If{$\delta[v]+\ell(v\to w)<\delta[w]$} {
-				$\delta[w]\gets \delta[v]+\ell(v\to w)$\;
+				\nl$\delta[w]\gets \delta[v]+\ell(v\to w)$\;
 			}
 			$\gamma[w]\gets\gamma[w]-1$\;
 			\If (\Comment*[f]{All incoming edges visited}) {$\gamma[w]=0$} {
@@ -385,14 +385,47 @@ assembly graph.
 	}
 	\Return {\bf nil}\;
 }
-\caption{Bubble detection (Li12)}
+\caption{Bubble detection}
 \end{algorithm}
 
 After constructing the assembly graph, miniasm removes transitive
 edges~\citep{Myers:2005bh}, trims tips and pops small bubbles. Algorithm~6
 detects bubbles. This algorithm is adapted from Kahn's topological sorting
 algorithm~\citep{Kahn62aa}. It starts from the potential source and visits a
-vertex when all its incoming edges are visited before.
+vertex when all its incoming edges are visited before. Algorithm~6 only detects
+bubbles. We can keep track of the optimal parent vertex at line~1 and then
+backtrack to collapse bubbles to a single path. Fermi~\citep{Li:2012fk} uses a
+similar algorithm except that it keeps two optimal paths through the bubble.
+
+In addition, if $v\to w_1$ and $v\to w_2$ exist and $\ell(v\to w_1)<\ell(v\to
+w_2)$, miniasm removes $v\to w_2$ if $[|v|-\ell(v\to w_2)]/[|v|-\ell(v\to
+w_1)]$ is small enough (70\% by default). When there are longer overlaps,
+shorter overlaps after transitive reduction may be due to repeats.
+However, non-repetitive overlaps may also be removed at a small chance, which
+leads to missing overlaps and misassemblies.
+
+\subsection{Related works}
+
+Minimap and miniasm are influenced by multiple previous works. We studied 
+MHAP~\citep{Berlin:2015xy} and DALIGNER~\citep{DBLP:conf/wabi/Myers14} before
+designing the minimap algorithm. The idea of frequent array sorting and the use
+of minimizers~\citep{Roberts:2004fv} as a reduced representation of a string
+are learned from them. At the same time, we have our own design choices. We did
+not use MinHash because it apparently does not work well when sequences are
+vastly different in lengths; we did not use DALIGNER's sort merge because it
+requires users to split the input properly, which is not always convenient.
+
+Furthermore, the clustering of minimizer hits was inspired by Hough
+Transformation, which was mentioned by~\citet{sovic:2015aa}. Correction-free
+assembly was motivated by a few Gene Myers' talks on PacBio read assembly. The
+formulation of assembly graph is derived from string
+graph~\citep{Myers:2005bh}. Tip trimming and bubble popping were originated
+from the first short-read assembler Velvet~\citep{Zerbino:2008uq}.
+
+There are also a few parallel works. Sikic et al (personal communication) are
+also exploring correction-free assembly of noisy reads.
+\citet{DBLP:conf/wabi/OnoderaSS13} and \citet{TCS15} independently found bubble
+popping algorithms based on a similar principle to Algorithm~6.
 
 \end{methods}
 
