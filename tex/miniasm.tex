@@ -404,7 +404,70 @@ shorter overlaps after transitive reduction may be due to repeats.
 However, non-repetitive overlaps may also be removed at a small chance, which
 leads to missing overlaps and misassemblies.
 
-\subsection{Related works}
+\subsection{Formats}
+
+\subsubsection{Pairing mapping format (PAF)}
+
+\begin{table}[ht]\label{tab:paf}
+\processtable{Pairwise mapping format (PAF)}
+{\footnotesize
+\begin{tabular}{rcl}
+\toprule
+Col & Type & Description \\
+\midrule
+1 & string & Query sequence name \\
+2 & int    & Query sequence length \\
+3 & int    & Query start coordinate (0-based) \\
+4 & int    & Query end coodinate (0-based) \\
+5 & char   & `+' if query and target on the same strand; `-' if opposite \\
+6 & string & Target sequence name \\
+7 & int    & Target sequence length \\
+8 & int    & Target start coordinate on the original strand \\
+9 & int    & Target end coordinate on the original strand \\
+10& int    & Number of matching bases in the mapping \\
+11& int    & Number bases, including gaps, in the mapping \\
+12& int    & Mapping quality (0--255 with 255 missing unavailable) \\
+\botrule
+\end{tabular}
+}{PAF is TAB-delimited text format with each line consisting of the above fixed
+fields. When the alignment is available, column 11 equals the total number of
+sequence matches, mismatches and gaps in the alignment. Column 10 divided by
+column 11 gives the alignment identity. If the detailed alignment is not
+available, column 10 and 11 can be approximate. PAF may optionally have
+additional fields in the SAM-like typed key-value format~\citep{Li:2009ys}.}
+\end{table}
+
+PAF is a lightweight format keeping the key mapping information (Table~1).
+Minimap outputs mappings in PAF, which are taken by miniasm as input for
+assembly.
+
+\subsubsection{Graphical fragment assembly format (GFA)}
+
+\begin{table}[ht]
+\processtable{Graphical fragment assembly format (GFA)}
+{\footnotesize
+\begin{tabular}{clp{5.8cm}}
+\toprule
+Line & Comment & Fixed fields \\
+\midrule
+H    & Header & N/A \\
+S    & Segment & segName,segSeq \\
+L    & Overlap & segName1,segOri1,segName2,segOri2,CIGAR \\
+\botrule
+\end{tabular}
+}{GFA is a line-based TAB-delimited format. Each line starts with a single
+letter determining the interpretation of the following TAB-delimited fields. In
+GFA, segment refers to a read or a unitig. A line start with `S' gives the name
+and sequence of a segment. When the sequence is not available, it can be a star
+`*'. Overlaps between segments are represented in lines starting with `L',
+giving the names and orientations of the two segments in an overlap. The last
+field `CIGAR' on an `L'-line describes the detailed alignment of the overlap if
+available. In addition of the types of lines in the table, GFA may contain
+other line types starting with different letters. Each line may optionally have
+additional SAM-like typed key-value pairs.}
+\end{table}
+
+\subsection{Other related works}
 
 Minimap and miniasm are influenced by multiple previous works. We studied 
 MHAP~\citep{Berlin:2015xy} and DALIGNER~\citep{DBLP:conf/wabi/Myers14} before
@@ -425,7 +488,10 @@ from the first short-read assembler Velvet~\citep{Zerbino:2008uq}.
 There are also a few parallel works. Sikic et al (personal communication) are
 also exploring correction-free assembly of noisy reads.
 \citet{DBLP:conf/wabi/OnoderaSS13} and \citet{TCS15} independently found bubble
-popping algorithms based on a similar principle to Algorithm~6.
+popping algorithms based on a similar principle to Algorithm~6. We proposed the
+GFA assembly format initially. The format is now maintained by Pall Melsted
+(personal communication) and can be visualized with
+Bandage~\citep{Wick:2015qf}, which has greatly helped us to improve miniasm.
 
 \end{methods}
 
