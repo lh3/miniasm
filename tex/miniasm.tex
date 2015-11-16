@@ -162,7 +162,7 @@ minimizers.
 \BlankLine
 \textbf{Function} {\sc Index}$(\mathcal{T},w,k)$
 \Begin {
-	Initialize $\mathcal{H}$ as an empty hash table\;
+	$\mathcal{H}\gets$ empty hash table\;
 	\For{$t\gets1$ \KwTo $T$} {
 		$\mathcal{M}\gets${\sc MinizerSketch}$(s_t,w,k)$\;
 		\ForEach{$(h,i,r)\in \mathcal{M}$} {
@@ -207,25 +207,22 @@ $i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
 \BlankLine
 \textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,g)$
 \Begin {
-	Initialize $\mathcal{A}$ as an empty array\;
+	$\mathcal{A}\gets$ empty array\;
 	$\mathcal{M}\gets${\sc MinizerSketch}$(q,w,k)$\;
 	\nl\ForEach (\Comment*[f]{Collect minimizer hits}) {$(h,i,r)\in \mathcal{M}$} {
 		\ForEach{$(t,i',r')\in \mathcal{H}[h]$} {
 			\uIf (\Comment*[f]{Minimizers on the same strand}) {$r=r'$} {
-%				$x\gets t${\tt\char60\char60}32 {\tt\char124} $(|q|-i+i')$
 				Append $(t,0,i-i',i')$ to $\mathcal{A}$\;
 			} \Else (\Comment*[f]{On different strands}) {
-%				$x\gets{\tt1ULL}${\tt\char60\char60}63 {\tt\char124} $t${\tt\char60\char60}32 {\tt\char124} $(i+i')$
 				Append $(t,1,i+i',i')$ to $\mathcal{A}$\;
 			}
-%			Append $(x,t,i',i)$ to $\mathcal{A}$\;
 		}
 	}
 	Sort $\mathcal{A}=[(t,r,c,i')]$ in the order of the four values in tuples\;
 	$b\gets1$\;
 	\nl\For (\Comment*[f]{Cluster minimizer hits}) {$e=1$ \KwTo $|\mathcal{A}|$} {
 		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].t\not=\mathcal{A}[e].t$ {\bf or} $\mathcal{A}[e+1].r\not=\mathcal{A}[e].r$ {\bf or} $\mathcal{A}[e+1].c-\mathcal{A}[e].c>g$} {
-			\nl$\mathcal{C}\gets$the maximal colinear subset of $\mathcal{A}[b..e]$\;
+			\nl$\mathcal{C}\gets$ the maximal colinear subset of $\mathcal{A}[b..e]$\;
 			Print the left- and right-most query/target positions in $\mathcal{C}$\;
 			$b\gets e+1$\;
 		}
@@ -261,14 +258,141 @@ $\ell:E\to\Re_+$ is the edge length fuction. $G$ is said to be
 ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
 be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
-is an \emph{assembly graph}.
+is an \emph{assembly graph}. Let $\mathrm{deg}^+(v)$ be the indegree of $v$ and
+$\mathrm{deg}^-(v)$ be the outdegree. It follows that
+$\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
 
 An assembly graph has the same topology as a string graph~\citep{Myers:2005bh},
 though the interpretation of the vertex set $V$ is different. In a string
 graph, $V$ is the set of the two ends of sequences, not the set of forward and
 reverse-complemented sequences.
 
+In an assembly graph, an edge $v\to w$ is \emph{transitive} if there exist
+$v\to u$ and $u\to w$. Removing a transitive edge does not affect the
+connectivity of the graph. A vertex $v$ is a \emph{tip} if ${\rm deg}^+(v)=0$
+and ${\rm deg}^-(v)>0$. The majority of tips are caused by artifacts or missing
+overlaps. A \emph{bubble} is a directed acyclic subgraph with a single source
+$v$ and a single sink $w$ having at least two paths between $v$ and $w$. The
+bubble is tight if ${\rm deg}^+(v)>1$ and ${\rm deg}^-(w)>1$. A bubble may be
+caused by variants between homologous haplotypes as well as missing overlaps.
+
 \subsection{Assembly}
+
+\subsubsection{Trimming reads}
+
+Raw read sequences may contain artifacts such as untrimmed adapters and
+chimaera. The first step of assembly to reduce such artifacts by examining
+read-to-read mappings. For each read, miniasm finds the longest region that is
+covered by three or more good mappings (longer than 2000bp with at least 100bp
+non-redundant bases on matching minimizers) and trims bases outside the region.
+It uses the good mappings to get a very crude estiamte of sequencing coverage.
+If the coverage is more than 20-fold, miniasm applies the previous filtering
+strategy again but requiring reads to be covered by more good mappings (by
+default, 15\% of estiamted coverage). While trimming reads, miniasm also trims
+mappings.
+
+\subsubsection{Generating assembly graph}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.45\textwidth]{overhang}
+\caption{Mapping between two reads. $b[1]$ and $e[1]$ are the starting the
+ending mapping coordinates of the first read $v$, respectively. $b[2]$ and
+$e[2]$, $b[2]<e[2]$, are the coordiantes on the mapping strand of the second
+read $w$. Lightgray areas indicate regions that would be mapped together if the
+overlap was perfect. If the overhang regions are small enough, the figure
+implies an edge $v\to\overline{w}$ with $\ell(v\to\overline{w})=b[1]-b[2]$ and
+an edge $w\to\overline{v}$ with
+$\ell(w\to\overline{v})=(l[2]-e[2])-(l[1]-e[1])$.}\label{fig:overhang}
+\end{figure}
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{Read length $l$, mapping begin coordinate $b$ and mapping end $e$ of the
+two reads; max overhang length $o$ and max overhang to mapping length ratio
+$r$}
+\KwOut{hashed $p$-bit integer}
+\BlankLine
+\textbf{Function} {\sc ClassifyMapping}$(l[2], b[2], e[2], o, r)$
+\Begin {
+	${\it overhang}\gets\min(b[1], b[2])+\min(l[1]-e[1],l[2]-e[2])$\;
+	${\it maplen}\gets\max(e[1]-b[1],e[2]-b[2])$\;
+	\uIf{${\it overhang}>\min(o,{\it maplen}\cdot r)$} {
+		\Return {\tt INTERNAL\_MATCH}
+	} \uElseIf {$b[1]\le b[2]$ {\bf and} $l[1]-e[1]\le l[2]-e[2]$} {
+		\Return {\tt FIRST\_CONTAINED}
+	}\uElseIf {$b[1]\ge b[2]$ {\bf and} $l[1]-e[1]\ge l[2]-e[2]$} {
+		\Return {\tt SECOND\_CONTAINED}
+	} \uElseIf {$b[1]>b[2]$} {
+		\Return {\tt FIRST\_TO\_SECOND\_OVERLAP}
+	} \Else {
+		\Return {\tt SECOND\_TO\_FIRST\_OVERLAP}
+	}
+}
+\caption{Mapping classification}
+\end{algorithm}
+
+For each trimmed mapping, miniasm applies Algorithm~5 to classify the mapping
+(see also Figure~\ref{fig:overhang} for the explanation of input variables).
+It ignores internal matches, drops contained reads and adds overlaps to the
+assembly graph.
+
+
+\subsubsection{Graph cleaning}
+
+\begin{algorithm}[ht]
+\DontPrintSemicolon
+\footnotesize
+\KwIn{$G=(V,E)$, starting vertex $v_0$ and maximum probe distance $d$}
+\KwOut{the sink vertex of a bubble within $d$; or {\bf nil} if not found}
+\BlankLine
+\textbf{Function} {\sc DetectBubble}$(V,E,v_0,d)$
+\Begin {
+	\lIf{$\mathrm{deg}^+(v_0)<2$} { \Return {\bf nil} } \Comment*[r]{Not a source of bubble}
+	\lFor{$v\in V$} { $\delta[v]\gets\infty$ } \Comment*[r]{the min distance from $v_0$ to $v$}
+	$\delta[v_0]\gets0$\;
+	$S\gets$ empty stack \Comment*[r]{Vertices with all incoming edges visited}
+	{\sc Push}$(S,v_0)$\;
+	$p\gets0$ \Comment*[r]{Number of visited vertices never added to $S$}
+	\While{$S$ is not empty} {
+		$v\gets$ {\sc Pop}$(S)$\;
+		\ForEach{$v\to w\in E$} {
+			\If (\Comment*[f]{A circle involving the starting vertex}) {$w=v_0$} {
+				\Return {\bf nil}\;
+			}
+			\If (\Comment*[f]{Moving too far}) {$\delta[v]+\ell(v\to w)>d$} {
+				\Return {\bf nil}\;
+			}
+			\If (\Comment*[f]{Not visited before}) {$\delta[w]=\infty$} {
+				$\gamma[w]\gets \mathrm{deg}^-(w)$ \Comment*[r]{No. unvisited incoming edges}
+				$p\gets p+1$\;
+			}
+			\If{$\delta[v]+\ell(v\to w)<\delta[w]$} {
+				$\delta[w]\gets \delta[v]+\ell(v\to w)$\;
+			}
+			$\gamma[w]\gets\gamma[w]-1$\;
+			\If (\Comment*[f]{All incoming edges visited}) {$\gamma[w]=0$} {
+				\If (\Comment*[f]{Not a tip}) {$\mathrm{deg}^+(w)\not=0$} {
+					{\sc Push}$(S,w)$\;
+				}
+				$p\gets p-1$\;
+			}
+		}
+		\If (\Comment*[f]{Found the sink}) {$|S|=1$ {\bf and} $p=0$} {
+			\Return {\sc Pop}$(S)$\;
+		}
+	}
+	\Return {\bf nil}\;
+}
+\caption{Bubble detection (Li12)}
+\end{algorithm}
+
+After constructing the assembly graph, miniasm removes transitive
+edges~\citep{Myers:2005bh}, trims tips and pops small bubbles. Algorithm~6
+detects bubbles. This algorithm is adapted from Kahn's topological sorting
+algorithm~\citep{Kahn62aa}. It starts from the potential source and visits a
+vertex when all its incoming edges are visited before.
 
 \end{methods}
 
