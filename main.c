@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r86"
+#define MA_VERSION "r92"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -110,14 +110,16 @@ int main(int argc, char *argv[])
 			sub = ma_hit_sub(opt.min_dp, opt.min_iden, 0, n_hits, hit, d->n_seq);
 			n_hits = ma_hit_cut(sub, opt.min_span, n_hits, hit);
 		}
-		if (stage >= 3) n_hits = ma_hit_flt(sub, &opt, n_hits, hit, &cov);
+		if (stage >= 3) n_hits = ma_hit_flt(sub, opt.max_hang * 1.5, opt.min_ovlp * .5, n_hits, hit, &cov);
 	}
 
 	if (!no_second) {
 		fprintf(stderr, "[M::%s] ===> Step 3: 2-pass (fine) read selection <===\n", __func__);
 		if (stage >= 4) {
 			ma_sub_t *sub2;
-			sub2 = ma_hit_sub((int)(cov * opt.cov_ratio + .499) - 1, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
+			int min_dp = (int)(cov * opt.cov_ratio + .499) - 1;
+			min_dp = min_dp > opt.min_dp? min_dp : opt.min_dp;
+			sub2 = ma_hit_sub(min_dp, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 			n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 			ma_sub_merge(d->n_seq, sub, sub2);
 			free(sub2);

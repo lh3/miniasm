@@ -152,15 +152,15 @@ size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a)
 	return m;
 }
 
-size_t ma_hit_flt(const ma_sub_t *sub, const ma_opt_t *opt, size_t n, ma_hit_t *a, float *cov)
+size_t ma_hit_flt(const ma_sub_t *sub, int max_hang, int min_ovlp, size_t n, ma_hit_t *a, float *cov)
 {
 	size_t i, m;
 	asg_arc_t t;
 	uint64_t tot_dp = 0, tot_len = 0;
-	int r, max_hang = opt->max_hang + (opt->max_hang>>1), min_ovlp = opt->min_ovlp / 2;
 	for (i = m = 0; i < n; ++i) {
 		ma_hit_t *h = &a[i];
 		const ma_sub_t *sq = &sub[h->qns>>32], *st = &sub[h->tn];
+		int r;
 		if (sq->del || st->del) continue;
 		r = ma_hit2arc(h, sq->e - sq->s, st->e - st->s, max_hang, .5, min_ovlp, &t);
 		if (r >= 0 || r == MA_HT_QCONT || r == MA_HT_TCONT)
