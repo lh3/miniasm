@@ -11,13 +11,14 @@ void ma_opt_init(ma_opt_t *opt)
 	opt->cov_ratio = .15;
 
 	opt->max_hang = 1000;
-	opt->min_ovlp = 2000;
+	opt->min_ovlp = opt->min_span;
 	opt->int_frac = .8;
 
 	opt->gap_fuzz = 1000;
 	opt->n_rounds = 2;
 	opt->bub_dist = 50000;
 	opt->max_ext = 4;
-	opt->min_ovlp_drop_ratio = .4;
+	opt->min_ovlp_drop_ratio = .5;
 	opt->max_ovlp_drop_ratio = .7;
+	opt->final_ovlp_drop_ratio = .8;
 }

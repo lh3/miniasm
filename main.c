@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r99"
+#define MA_VERSION "r100"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 		} else if (c == 'r') {
 			char *s;
 			opt.max_ovlp_drop_ratio = strtod(optarg, &s);
-			if (*s == ',') opt.min_ovlp_drop_ratio = strtod(s + 1, &s);
+			if (*s == ',') opt.final_ovlp_drop_ratio = strtod(s + 1, &s);
 		}
 	}
 	if (o_set == 0) opt.min_ovlp = opt.min_span;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -f FILE     read sequences []\n");
 		fprintf(stderr, "    -n INT      rounds of short overlap removal [%d]\n", opt.n_rounds);
 		fprintf(stderr, "    -r FLOAT[,FLOAT]\n");
-		fprintf(stderr, "                max and min overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.min_ovlp_drop_ratio);
+		fprintf(stderr, "                max and final overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.final_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n");
@@ -165,6 +165,13 @@ int main(int argc, char *argv[])
 			asg_cut_biloop(sg, opt.max_ext);
 			asg_cut_tip(sg, opt.max_ext);
 			asg_pop_bubble(sg, opt.bub_dist);
+		}
+		if (stage >= 11) {
+			fprintf(stderr, "[M::%s] ===> Step 4.5: aggressively cutting short overlaps <===\n", __func__);
+			if (asg_arc_del_short(sg, opt.final_ovlp_drop_ratio) != 0) {
+				asg_cut_tip(sg, opt.max_ext);
+				asg_pop_bubble(sg, opt.bub_dist);
+			}
 		}
 
 		if (strcmp(outfmt, "ug") == 0) {
