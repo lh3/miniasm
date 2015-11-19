@@ -71,14 +71,14 @@ ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const m
 {
 	size_t i, j, last, n_remained = 0;
 	kvec_t(uint32_t) b = {0,0,0};
-	kvec_t(uint64_t) c = {0,0,0};
 	ma_sub_t *sub = 0;
 
 	sub = (ma_sub_t*)calloc(n_sub, sizeof(ma_sub_t));
 	for (i = 1, last = 0; i <= n; ++i) {
 		if (i == n || a[i].qns>>32 != a[i-1].qns>>32) { // we come to a new query sequence
 			size_t start = 0;
-			int dp, max_len, max_pos = -1, qid = a[i-1].qns>>32;
+			int dp, qid = a[i-1].qns>>32;
+			ma_sub_t max, max2;
 			kv_resize(uint32_t, b, i - last);
 			b.n = 0;
 			for (j = last; j < i; ++j) { // collect all starts and ends
@@ -91,7 +91,8 @@ ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const m
 				}
 			}
 			ks_introsort_uint32_t(b.n, b.a);
-			for (j = c.n = 0, dp = 0, max_len = 0; j < b.n; ++j) {
+			max.s = max.e = max.del = max2.s = max2.e = max2.del = 0;
+			for (j = 0, dp = 0; j < b.n; ++j) {
 				int old_dp = dp;
 				if (b.a[j]&1) --dp;
 				else ++dp;
@@ -99,21 +100,21 @@ ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const m
 					start = b.a[j]>>1;
 				} else if (old_dp >= min_dp && dp < min_dp) {
 					int len = (b.a[j]>>1) - start;
-					if (max_len < len) max_len = len, max_pos = c.n;
-					kv_push(uint64_t, c, (uint64_t)start<<32 | (b.a[j]>>1));
+					if (len > max.e - max.s) max2 = max, max.s = start, max.e = b.a[j]>>1;
+					else if (len > max2.e - max2.s) max2.s = start, max2.e = b.a[j]>>1;
 				}
 			}
-			if (max_pos >= 0) {
+			if (max.e - max.s > 0) {
 				assert(qid < n_sub);
-				sub[qid].s = (uint32_t)(c.a[max_pos]>>32) - end_clip;
-				sub[qid].e = (uint32_t)c.a[max_pos] + end_clip;
+				sub[qid].s = max.s - end_clip;
+				sub[qid].e = max.e + end_clip;
 				sub[qid].del = 0;
 				++n_remained;
 			} else sub[qid].del = 1;
 			last = i;
 		}
 	}
-	free(c.a); free(b.a);
+	free(b.a);
 	if (ma_verbose >= 3)
 		fprintf(stderr, "[M::%s::%s] %ld query sequences remain after sub\n", __func__, sys_timestamp(), n_remained);
 	return sub;
