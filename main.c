@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r98"
+#define MA_VERSION "r99"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -32,7 +32,7 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 0;
+	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 0, o_set = 0;
 	sdict_t *d;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
 		else if (c == 'c') opt.min_dp = atoi(optarg);
-		else if (c == 'o') opt.min_ovlp = atoi(optarg);
+		else if (c == 'o') opt.min_ovlp = atoi(optarg), o_set = 1;
 		else if (c == 'S') stage = atoi(optarg);
 		else if (c == 'd') opt.bub_dist = atoi(optarg);
 		else if (c == 'g') opt.gap_fuzz = atoi(optarg);
@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 			if (*s == ',') opt.min_ovlp_drop_ratio = strtod(s + 1, &s);
 		}
 	}
+	if (o_set == 0) opt.min_ovlp = opt.min_span;
 	if (argc == optind) {
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
 		fprintf(stderr, "Options:\n");
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -s INT      min span [%d]\n", opt.min_span);
 		fprintf(stderr, "    -c INT      min coverage [%d]\n", opt.min_dp);
 		fprintf(stderr, "  Overlap:\n");
-		fprintf(stderr, "    -o INT      min overlap [%d]\n", opt.min_ovlp);
+		fprintf(stderr, "    -o INT      min overlap [same as -s]\n");
 		fprintf(stderr, "    -h INT      max over hang length [%d]\n", opt.max_hang);
 		fprintf(stderr, "    -I FLOAT    min end-to-end match ratio [%.2g]\n", opt.int_frac);
 		fprintf(stderr, "  Layout:\n");
