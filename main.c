@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r101"
+#define MA_VERSION "r102"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VB")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBF:")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -60,13 +60,14 @@ int main(int argc, char *argv[])
 		else if (c == 'n') opt.n_rounds = atoi(optarg);
 		else if (c == 'C') opt.cov_ratio = atof(optarg);
 		else if (c == 'B') bi_dir = 1;
+		else if (c == 'F') opt.final_ovlp_drop_ratio = atof(optarg);
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
 			return 0;
 		} else if (c == 'r') {
 			char *s;
 			opt.max_ovlp_drop_ratio = strtod(optarg, &s);
-			if (*s == ',') opt.final_ovlp_drop_ratio = strtod(s + 1, &s);
+			if (*s == ',') opt.min_ovlp_drop_ratio = strtod(s + 1, &s);
 		}
 	}
 	if (o_set == 0) opt.min_ovlp = opt.min_span;
@@ -89,7 +90,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -f FILE     read sequences []\n");
 		fprintf(stderr, "    -n INT      rounds of short overlap removal [%d]\n", opt.n_rounds);
 		fprintf(stderr, "    -r FLOAT[,FLOAT]\n");
-		fprintf(stderr, "                max and final overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.final_ovlp_drop_ratio);
+		fprintf(stderr, "                max and min overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.min_ovlp_drop_ratio);
+		fprintf(stderr, "    -F FLOAT    aggressive overlap dro ratio in the end [%.2g]\n", opt.final_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n");
