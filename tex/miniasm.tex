@@ -9,7 +9,6 @@
 \SetKwComment{Comment}{$\triangleright$\ }{}
 
 \usepackage{natbib}
-
 \bibliographystyle{apalike}
 
 \begin{document}
@@ -20,8 +19,61 @@
 \address{Broad Institute, 75 Ames Street, Cambridge, MA 02142, USA}
 \maketitle
 
-\begin{methods}
+\begin{abstract}
 
+\section{Motivation:} Single Molecule Real-Time (SMRT) technology and Oxford
+Nanopore technologies (ONT) produce reads over 10kbp in length, which make it
+possible to produce high-quality finished genome at an affordable cost.
+However, at present, long reads have an error rate as high as 10--15\%.
+Complex and computation demanding pipelines are required to assemble such
+reads.
+
+\section{Results:} We present a new mapper, minimap, and a \emph{de novo}
+assembler, miniasm, for efficiently mapping and assembling SMRT and ONT reads,
+though without a consensus step. They can often assemble a sequencing run of
+bacterial data into a single contig in a few minutes, and assemble 45-fold
+\emph{C. elegans} data in 10 minutes, one to two orders of magnitude times
+faster than the existing pipelines. We also introduce a pairwise read mapping
+format (PAF) and a graphical fragment assembly format (GFA), and demonstrate
+the interoperability between ours and current tools.
+
+\section{Availability and implementation:} https://github.com/lh3/minimap and
+https://github.com/lh3/miniasm
+
+\section{Contact:} hengli@broadinstitute.org
+
+\end{abstract}
+
+\section{Introduction}
+
+High-throughput short-read sequencing technologies, such as Illumina, have
+empowered a variety of biological researches and clinical applications that
+would not be practical with the older Sanger sequencing. However, the short
+read length (typically a few hundred basepairs) has posed a great challenge to
+\emph{de novo} assembly as many repetitive sequences and segmental duplications
+are longer than the read length and can hardly be resolved by short reads even
+with paired-end data~\citep{Alkan:2011zr}. Although with increased read length
+and improved algorithms we are now able to produce much better short-read
+assemblies than a few years ago, the contiguity and completeness of the
+assemblies are still not as good as the old Sanger
+assemblies~\citep{Chaisson:2015wj}.
+
+The SMRT technology developed by PacBio arose partly as an answer to the
+problem with \emph{de novo} assembly. However, due to the high per-base error
+rate, around 15\%, these reads were only used as a complement to short
+reads~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
+until~\citet{Chin:2013qr} and~\citet{Koren:2013fc} demonstrated the feasibility
+of SMRT-only assembly. Since then, SMRT is becoming the preferred technology
+for finishing small genomes and producing high-quality Eukaryotic
+genomes~\citep{Berlin:2015xy}.
+
+Oxford Nanopore Technologies (ONT) has recently offered another long-read
+sequencing technology. Although the per-base error rate was high at the
+early access stage~\citep{Quick:2014uf}, the latest data quality has been
+greatly improved. \citet{Loman:2015xu} confirmed that we can achieve
+high-quality bacterial assembly with ONT data alone.
+
+\begin{methods}
 \section{Methods}
 
 \subsection{General notations}
