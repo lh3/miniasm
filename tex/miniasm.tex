@@ -22,11 +22,10 @@
 \begin{abstract}
 
 \section{Motivation:} Single Molecule Real-Time (SMRT) technology and Oxford
-Nanopore technologies (ONT) produce reads over 10kbp in length, which make it
-possible to produce high-quality finished genome at an affordable cost.
-However, at present, long reads have an error rate as high as 10--15\%.
-Complex and computation demanding pipelines are required to assemble such
-reads.
+Nanopore technologies (ONT) produce reads over 10kbp in length, which have
+enabled high-quality genome assembly at an affordable cost.  However, at
+present, long reads have an error rate as high as 10--15\%.  Complex and
+computationally intensive pipelines are required to assemble such reads.
 
 \section{Results:} We present a new mapper, minimap, and a \emph{de novo}
 assembler, miniasm, for efficiently mapping and assembling SMRT and ONT reads,
@@ -59,9 +58,9 @@ assemblies are still not as good as the old Sanger
 assemblies~\citep{Chaisson:2015wj}.
 
 The SMRT technology developed by PacBio arose partly as an answer to the
-problem with \emph{de novo} assembly. However, due to the high per-base error
-rate, around 15\%, these reads were only used as a complement to short
-reads~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
+problem with short-read \emph{de novo} assembly. However, due to the high
+per-base error rate, around 15\%, these reads were only used as a complement to
+short reads~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
 until~\citet{Chin:2013qr} and~\citet{Koren:2013fc} demonstrated the feasibility
 of SMRT-only assembly. Since then, SMRT is becoming the preferred technology
 for finishing small genomes and producing high-quality Eukaryotic
@@ -72,6 +71,54 @@ sequencing technology. Although the per-base error rate was high at the
 early access stage~\citep{Quick:2014uf}, the latest data quality has been
 greatly improved. \citet{Loman:2015xu} confirmed that we can achieve
 high-quality bacterial assembly with ONT data alone.
+
+Published long-read assembly pipelines all include four stages: (i) all-vs-all
+raw read mapping, (ii) raw read error correction, (iii) assembly of error
+corrected reads and (iv) contig consensus polish. Stage (iii) also involves
+all-vs-all read mapping, but as the error rate is much reduced at this step,
+it is easier and faster than stage (i).
+
+Table~1 shows the published and unpublished tools used for each stage. Notably,
+minimap is a raw read overlapper and miniasm is an assembler. Different from
+published pipelines, our approach skips the error correction stage.  It
+directly takes overlaps between raw reads and produce unpolished contig
+sequences. The idea of correction-free assembly was inspired by a series of
+talks given by Gene Myers. Sikic et al (personal communication) are also
+independently exploring such an approach.
+
+\begin{table}[b]
+\processtable{Tools for noisy long-read assembly}
+{\footnotesize
+\begin{tabular}{p{2.4cm}p{2cm}l}
+\toprule
+Functionality & Program & Reference \\
+\midrule
+Raw read overlap & BLASR & \citet{Chaisson:2012aa}\\
+& DALIGNER & \citet{DBLP:conf/wabi/Myers14} \\
+& MHAP & \citet{Berlin:2015xy} \\
+& GraphMap & \citet{sovic:2015aa} \\
+& minimap & this article \\
+Error correction & pbdagcon & http://bit.ly/pbdagcon \\
+& falcon\_sense & http://bit.ly/pbfcasm \\
+& nanocorrect & \citet{Loman:2015xu} \\
+Assembly & wgs-assembler & \citet{Myers:2000kl} \\
+& Falcon & http://bit.ly/pbfcasm \\
+& ra-integrate & http://bit.ly/raitgasm \\
+& miniasm & this article \\
+Consensus polish & Quiver & http://bit.ly/pbquiver \\
+& nanopolish & \citet{Loman:2015xu} \\
+Assembly viewer & Bandage & \citet{Wick:2015qf}\\
+\botrule
+\end{tabular}
+}{}
+\end{table}
+
+As we can see from Table~1, each stage can be achieved with multiple tools.
+Although we have successfully combined tools into different pipelines, we
+usually need to change or convert the input/output formats to make them work
+together. Another contribution of this article is the proposal of concise
+mapping and assembly formats, which may encourage modular design of assemblers
+and the associated tools.
 
 \begin{methods}
 \section{Methods}
@@ -94,18 +141,54 @@ starting at $i$.
 
 \subsection{Minimap}
 
-\subsubsection{Overview of algorithm}
+\subsubsection{Overview of $k$-mer based sequence simiarity search}\label{sec:minimapov}
 
-Loosely speaking, a $(w,k)$-minimizer \citep{Roberts:2004fv} of a string is the
-smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. If
-sequence $s'$ is a subsequence of $s$, the minimizers of $s'$ will be a subset
-of the minimizers of $s$. If $s'$ and $s$ are close, the number of shared
-colinear minimizers between them approximately measures their similarity. In
-this sense, the set of minimizers of $s$ is a (possibly reduced) representation
-of $s$. When we map a query sequence against a set of target sequences, we may
-construct a hash table for all target minimizers and then look up for query
-minimizers. Large clusters of colinear minimizer matches imply potential
-mappings.
+BLAST~\citep{Altschul:1997vn} and BLAT~\citep{Kent:2002jk} are among the most
+popular sequence similarity search tools. They use one $k$-mer hash function
+$\phi:\Sigma^k\to\mathbb{Z}$ to hash $k$-mers at the position
+$1,w+1,2w+1,\ldots$ of a target sequence and keep the hash values in a hash
+table. Upon query, they use the same hash function on every $k$-mer of the
+query sequence and look up the hash table for potential matches. If there are
+one or multiple $k$-mer matches in a small window, these aligners extend the
+matches with dynamic programming to construct the final alignment.
+
+DALIGNER~\citep{DBLP:conf/wabi/Myers14} does not use a hash table. It instead
+identifies $k$-mer matches between two sets of reads by sorting $k$-mers and
+merging the sorted lists. DALIGNER is fast primarily because sorting and
+merging are highly cache efficient.
+
+MHAP~\citep{Berlin:2015xy} differs from others in the use of MinHash
+sketch~\citep{Broder:1997aa}.  Briefly, given a read sequence $s$ and $m$
+$k$-mer hash functions $\{\phi_j\}_{1\le j\le m}$, MHAP computes
+$h_j=\min\{\phi_j(s_i^k):1\le i\le |s|-k+1\}$ with each hash function, and
+takes list $(h_j)_{1\le j\le m}$, which is called the \emph{sketch} of
+$s$, as a reduced representation of $s$. Suppose $(h_j)_j$ and $(h'_j)_j$ are
+the sketches of two reads, respectively. When the two reads are similar to each
+other or have significant overlaps, there are likely to exist multiple $j$ such
+that $h_j=h'_j$. Potential matches can thus be identified. A limitation of
+MinHash sketch is that it always selects a fixed number of hash values
+regardless of the length of the sequences. This may waste space and is not
+suitable when input sequences vary greatly in lengths.
+
+Minimap is heavily influenced by all these works. It adopts the idea of sketch
+like MHAP but takes minimizers \citep{Roberts:2004fv} as a reduced
+representation instead; it stores $k$-mers in a hash table like BLAT and MHAP
+but also uses sorting extensively like DALIGNER. In addition, minimap is
+designed not only as a read overlapper but also as a read-to-genome and
+genome-to-genome mapper. It has a wider range of applications.
+
+%\subsubsection{Overview of the minimap algorithm}
+%
+%Loosely speaking, a $(w,k)$-minimizer \citep{Roberts:2004fv} of a string is the
+%smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. If
+%sequence $s'$ is a subsequence of $s$, the minimizers of $s'$ will be a subset
+%of the minimizers of $s$. If $s'$ and $s$ are close, the number of shared
+%colinear minimizers between them approximately measures their similarity. In
+%this sense, the set of minimizers of $s$ is a (possibly reduced) representation
+%of $s$. When we map a query sequence against a set of target sequences, we may
+%construct a hash table for all target minimizers and then look up for query
+%minimizers. Large clusters of colinear minimizer matches imply potential
+%mappings.
 
 %A similar and more popular concept is $(w,k)$-mer, which is used by many
 %aligners such as BLAT and SSAHA2. A $(w,k)$-mer of a string $s$ is a $k$-mer
@@ -148,8 +231,10 @@ mappings.
 \caption{Compute minimizers}
 \end{algorithm}
 
-Let $\phi:\Sigma^k\to\mathbb{Z}$ be a function that maps any $k$-mer to an integer.
-Formally, a double-strand $(w,k,\phi)$-minimizer, or simply a minimizer, of a
+Loosely speaking, a $(w,k)$-minimizer of a string is the
+smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. Formally,
+let $\phi:\Sigma^k\to\mathbb{Z}$ be a function that maps any $k$-mer to an integer.
+A \emph{double-strand $(w,k,\phi)$-minimizer}, or simply a \emph{minimizer}, of a
 string $s$, $|s|\ge w+k-1$, is a triple $(h,i,r)$ such that there exists
 $\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which makes
 $$
@@ -250,6 +335,8 @@ or 2) $x=1$ and $|(i_1+i'_1)-(i_2+i'_2)|<\epsilon$. Intuitively,
 $\epsilon$-away hits are approximately colinear within a band of width
 $\epsilon$.  Given a set of minimizer hits $\{(h,x,i,i')\}$, we can cluster
 $i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
+This procedure is inspried by Hough Transformation mentioned
+by~\citet{sovic:2015aa}. 
 
 \begin{algorithm}[ht]
 \DontPrintSemicolon
@@ -441,13 +528,15 @@ assembly graph.
 \end{algorithm}
 
 After constructing the assembly graph, miniasm removes transitive
-edges~\citep{Myers:2005bh}, trims tips and pops small bubbles. Algorithm~6
-detects bubbles. This algorithm is adapted from Kahn's topological sorting
-algorithm~\citep{Kahn62aa}. It starts from the potential source and visits a
-vertex when all its incoming edges are visited before. Algorithm~6 only detects
-bubbles. We can keep track of the optimal parent vertex at line~1 and then
-backtrack to collapse bubbles to a single path. Fermi~\citep{Li:2012fk} uses a
-similar algorithm except that it keeps two optimal paths through the bubble.
+edges~\citep{Myers:2005bh}, trims tips and pops small
+bubbles~\citep{Zerbino:2008uq}. Algorithm~6 detects bubbles. This algorithm is
+adapted from Kahn's topological sorting algorithm~\citep{Kahn62aa}. It starts
+from the potential source and visits a vertex when all its incoming edges are
+visited before. Algorithm~6 only detects bubbles. We can keep track of the
+optimal parent vertex at line~1 and then backtrack to collapse bubbles to a
+single path. Fermi~\citep{Li:2012fk} uses a similar algorithm except that it
+keeps two optimal paths through the bubble.  \citet{DBLP:conf/wabi/OnoderaSS13}
+and \citet{TCS15} have also independently found similar algorithms.
 
 In addition, if $v\to w_1$ and $v\to w_2$ exist and $\ell(v\to w_1)<\ell(v\to
 w_2)$, miniasm removes $v\to w_2$ if $[|v|-\ell(v\to w_2)]/[|v|-\ell(v\to
@@ -489,9 +578,10 @@ available, column 10 and 11 can be approximate. PAF may optionally have
 additional fields in the SAM-like typed key-value format~\citep{Li:2009ys}.}
 \end{table}
 
-PAF is a lightweight format keeping the key mapping information (Table~1).
+PAF is a lightweight format keeping the key mapping information (Table~2).
 Minimap outputs mappings in PAF, which are taken by miniasm as input for
-assembly.
+assembly. We also provide scripts to convert DALIGNER, MHAP and SAM formats to
+PAF.
 
 \subsubsection{Graphical fragment assembly format (GFA)}
 
@@ -502,7 +592,7 @@ assembly.
 \toprule
 Line & Comment & Fixed fields \\
 \midrule
-H    & Header & N/A \\
+H    & Header  & N/A \\
 S    & Segment & segName,segSeq \\
 L    & Overlap & segName1,segOri1,segName2,segOri2,CIGAR \\
 \botrule
@@ -514,36 +604,18 @@ and sequence of a segment. When the sequence is not available, it can be a star
 `*'. Overlaps between segments are represented in lines starting with `L',
 giving the names and orientations of the two segments in an overlap. The last
 field `CIGAR' on an `L'-line describes the detailed alignment of the overlap if
-available. In addition of the types of lines in the table, GFA may contain
+available. In addition to the types of lines in the table, GFA may contain
 other line types starting with different letters. Each line may optionally have
 additional SAM-like typed key-value pairs.}
 \end{table}
 
-\subsection{Other related works}
-
-Minimap and miniasm are influenced by multiple previous works. We studied 
-MHAP~\citep{Berlin:2015xy} and DALIGNER~\citep{DBLP:conf/wabi/Myers14} before
-designing the minimap algorithm. The idea of frequent array sorting and the use
-of minimizers~\citep{Roberts:2004fv} as a reduced representation of a string
-are learned from them. At the same time, we have our own design choices. We did
-not use MinHash because it apparently does not work well when sequences are
-vastly different in lengths; we did not use DALIGNER's sort merge because it
-requires users to split the input properly, which is not always convenient.
-
-Furthermore, the clustering of minimizer hits was inspired by Hough
-Transformation, which was mentioned by~\citet{sovic:2015aa}. Correction-free
-assembly was motivated by a few Gene Myers' talks on PacBio read assembly. The
-formulation of assembly graph is derived from string
-graph~\citep{Myers:2005bh}. Tip trimming and bubble popping were originated
-from the first short-read assembler Velvet~\citep{Zerbino:2008uq}.
-
-There are also a few parallel works. Sikic et al (personal communication) are
-also exploring correction-free assembly of noisy reads.
-\citet{DBLP:conf/wabi/OnoderaSS13} and \citet{TCS15} independently found bubble
-popping algorithms based on a similar principle to Algorithm~6. We proposed the
-GFA assembly format initially. The format is now maintained by Pall Melsted
-(personal communication) and can be visualized with
-Bandage~\citep{Wick:2015qf}, which has greatly helped us to improve miniasm.
+GFA (http://bit.ly/gfaspec) is a concise assembly format initially proposed by
+us prior to miniasm and later improved by community (P. Melsted, S.  Jackman,
+J. Simpson and E. Garrison, personal communication). It has already been
+adopted by a few tools.  Notably, FASTG (http://bit.ly/fastgfmt) is another
+assembly format, but it is primarily designed to describe the final assembly
+graph, not the intermediate assembly graph. GFA is designed for both types of
+graphs.
 
 \end{methods}
 
