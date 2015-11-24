@@ -208,7 +208,7 @@ genome-to-genome mapper. It has a wider range of applications.
 \BlankLine
 \textbf{Function} {\sc MinizerSketch}$(s,w,k)$
 \Begin {
-	$\mathcal{M}\gets\emptyset$\Comment*[r]{NB: $M$ is a set; no duplicates}
+	$\mathcal{M}\gets\emptyset$\Comment*[r]{NB: $\mathcal{M}$ is a set; no duplicates}
 	\For{$i\gets1$ \KwTo $|s|-w-k+1$} {
 		$m\gets\infty$\;
 		\nl\For (\Comment*[f]{Find the min value}) {$j\gets0$ \KwTo $w-1$} {
@@ -549,7 +549,7 @@ leads to missing overlaps and misassemblies.
 
 \subsubsection{Pairing mapping format (PAF)}
 
-\begin{table}[ht]\label{tab:paf}
+\begin{table}[tb]\label{tab:paf}
 \processtable{Pairwise mapping format (PAF)}
 {\footnotesize
 \begin{tabular}{rcl}
@@ -585,7 +585,7 @@ PAF.
 
 \subsubsection{Graphical fragment assembly format (GFA)}
 
-\begin{table}[ht]
+\begin{table}[tb]
 \processtable{Graphical fragment assembly format (GFA)}
 {\footnotesize
 \begin{tabular}{clp{5.8cm}}
@@ -609,7 +609,7 @@ other line types starting with different letters. Each line may optionally have
 additional SAM-like typed key-value pairs.}
 \end{table}
 
-GFA (http://bit.ly/gfaspec) is a concise assembly format initially proposed by
+GFA is a concise assembly format (http://bit.ly/gfaspec) initially proposed by
 us prior to miniasm and later improved by community (P. Melsted, S.  Jackman,
 J. Simpson and E. Garrison, personal communication). It has already been
 adopted by a few tools.  Notably, FASTG (http://bit.ly/fastgfmt) is another
@@ -618,6 +618,85 @@ graph, not the intermediate assembly graph. GFA is designed for both types of
 graphs.
 
 \end{methods}
+
+\begin{table}[htb]
+\processtable{Evaluation data sets}
+{\footnotesize
+\begin{tabular}{llrrr}
+\toprule
+Name & Species & Size & Cov. & N50 \\
+\midrule
+PB-ce-40X     & {\it Caenorhabditis elegans}      & 104M & 45  & 16572 \\
+ERS473430     & {\it Citrobacter koseri}          & 4.9M & 106 & 7543  \\
+ERS544009     & {\it Yersinia pseudotuberculosis} & 4.7M & 147 & 9002  \\
+ERS554120     & {\it Pseudomonas aeruginosa}      & 6.4M & 90  & 7106  \\
+ERS605484     & {\it Vibrio vulnificus}           & 5.0M & 155 & 5091  \\
+ERS617393     & {\it Acinetobacter baumannii}     & 4.0M & 237 & 7911  \\
+ERS646601     & {\it Haemophilus influenzae}      & 1.9M & 258 & 4081  \\
+ERS659581     & {\it Klebsiella sp.}              & 5.1M & 129 & 8031  \\
+ERS670327     & {\it Shimwellia blattae}          & 4.2M & 155 & 6765  \\
+ERS685285     & {\it Streptococcus sanguinis}     & 2.4M & 224 & 5791  \\
+ERS743109     & {\it Salmonella enterica}         & 4.8M & 188 & 6051  \\
+PB-ecoli      & {\it Escherichia coli}            & 4.6M & 160 & 13976 \\
+PBcR-PB-ec    & {\it Escherichia coli}            & 4.6M & 30  & 11757 \\
+PBcR-ONT-ec   & {\it Escherichia coli}            & 4.6M & 29  & 9356  \\
+MAP-006-1     & {\it Escherichia coli}            & 4.6M & 54  & 10892 \\
+MAP-006-2     & {\it Escherichia coli}            & 4.6M & 30  & 10794 \\
+MAP-006-pcr-1 & {\it Escherichia coli}            & 4.6M & 30  & 8080  \\
+MAP-006-pcr-2 & {\it Escherichia coli}            & 4.6M & 60  & 8064  \\
+\botrule
+\end{tabular}
+}{Evaluation data set name, species, reference genome size, theoretical
+sequencing coverage and the N50 read length. Names starting with ``MAP'' are
+unpublished recent ONT data provided by the Loman lab (http://bit.ly/loman006).
+Names starting with ``ERS'' are accession numbers of unpublished PacBio data
+from the NCTC project (http://bit.ly/nctc3k). PB-ecoli and PB-ce-40X are PacBio
+public data sets sequenced with the P6/C4 chemistry (http://bit.ly/pbpubdat;
+retrieved on 11/03/2015). PBcR-PB-ec is the PacBio sample data (P5/C3
+chemistry) used in the tutorial of the PBcR pipeline; PBcR-ONT-ec is the ONT
+example originally used by \citet{Loman:2015xu}. `pls2fasta --trimByRegion' was
+applied to ERS* and PB-ecoli data sets as they do not provide read sequences in
+the FASTQ format.}
+\end{table}
+
+\section{Results}
+
+\subsection{Assembling bacterial data}
+
+We evaluated the performance of miniasm on 17 bacterial data sets data sets
+(Table~4). We used command line `minimap -Sw5 -L100 -m0 reads.fa reads.fa $|$
+miniasm -f reads.fa -'. Miniasm is able to derive a single contig per
+chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
+ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
+each. 
+
+Encouraged by the single-contig assembly for PBcR-PB-ec at only 30-fold
+coverage, we randomly down-sampled PacBio data sets and tried to assemble the
+subset. For PB-ecoli, miniasm still produced a single contig at 24-fold
+coverage, or two contigs at 20-fold. For the other data sets, however, miniasm
+generated fragmented assemblies when we sampled a third of reads. We speculate
+the shorter read lengths of the ERS* data sets made it more difficult to
+produce good assemblies at relatively low coverage.
+
+We have also run the PBcR pipeline~\citep{Berlin:2015xy}. PBcR reqires a spec
+file. We took `pacbio.spec' and `oxford.spec' from PBcR-PB-ec and PBcR-ONT-ec,
+respectively, and applied them to all data sets based on their data types. MAP*
+data sets only provide FASTA sequences for download. We assigned quality 9 to
+all bases as PBcR requires base quality. PBcR assembled all PacBio data sets
+without extra contigs longer than 50kb -- better than miniasm. However, on the
+ONT data sets, PBcR produced more fragmented assemblies for MAP-006-2,
+MAP-006-pcr-1 and MAP-006-pcr-2, and deleted a 300kb region for the PBcR-ONT-ec
+data set. 
+
+With four CPU cores, it took miniasm 17 seconds to assemble the 30-fold
+PBcR-PB-ec data set and 3 minutes to assemble the 160-fold PB-ecoli data set.
+PBcR is 500 times slower on PBcR-PB-ec and 35 times slower on PB-ecoli.
+The performance is worse on low-coverage input because PBcR automatically
+switches to the slower sensitive mode. Here we should remind readers that
+without an error correction stage, the contig sequences generated by miniasm
+are of much lower accuracy in comparison to PBcR. The speed comparison is not
+fair. Nonetheless, miniasm is still tens of times faster than PBcR excluding
+the time spent on error correction.
 
 \bibliography{miniasm}
 \end{document}
