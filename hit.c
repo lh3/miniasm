@@ -50,7 +50,7 @@ ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, s
 		p->qe = r.qe;
 		p->tn = sd_put(d, r.tn, r.tl);
 		p->ts = r.ts, p->te = r.te, p->rev = r.rev, p->ml = r.ml, p->bl = r.bl;
-		if (bi_dir) {
+		if (bi_dir && p->qns>>32 != p->tn) {
 			kv_pushp(ma_hit_t, h, &p);
 			p->qns = (uint64_t)sd_put(d, r.tn, r.tl)<<32 | r.ts;
 			p->qe = r.te;
