@@ -5,8 +5,8 @@ use warnings;
 use Getopt::Std;
 
 my %opts = ();
-getopts("1", \%opts);
-my $is_dbl = !defined($opts{1});
+getopts("2", \%opts);
+my $is_dbl = defined($opts{2});
 
 die("Usage: mhap2paf.pl [-1] <in.mhap>\n") if (@ARGV == 0 && -t STDIN);
 
