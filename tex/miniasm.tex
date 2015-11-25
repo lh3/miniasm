@@ -705,7 +705,7 @@ times faster than PBcR excluding the time spent on error correction.
 \caption{Dotter plot comparing the miniasm assembly and the {\it C. elegans}
 reference genome. Thin gray lines are boundaries of contigs or chromosomes. The
 three arrows indicate large-scale misassemblies visible from the
-plot. The mapping is done by minimap.}\label{fig:ce}
+plot. The mapping is done by `minimap -L500'.}\label{fig:ce}
 \end{figure}
 
 We assembled a 45-fold {\it C. elegans} data set (Table~4). With 16 CPU cores,
@@ -716,10 +716,10 @@ the high per-base error rate of the miniasm contigs, we have not been able to
 produce realible whole-genome alignment to analyze local misassemblies in a
 satisfactory manner.
 
-PacBio has assembled the same data set with HGAP3~\citep{Chin:2013qr}. The
-dotter plot between the {\it C. elegans} reference genome and the HGAP3
-assembly shows no visible large-scale misassemblies, though the N50 is shorter
-(1.6Mb).
+PacBio has assembled the same data set with HGAP3~\citep{Chin:2013qr}. HGAP3
+produces shorter contigs (N50 1.6Mb), but does not incur large-scale
+misassemblies visible from the dotter plot between the {\it C. elegans}
+reference genome and the contigs.
 
 We have also tried PBcR on this data set. Based on the intermediate progress
 report, we estimated that with 16 CPU cores, it would take a week or so to
