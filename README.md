@@ -1,3 +1,5 @@
+*Warning: since r104, miniasm only works with minimap-r122 or later*
+
 ## Getting Started
 
 ```sh

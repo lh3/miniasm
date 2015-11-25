@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r103"
+#define MA_VERSION "r104"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -32,7 +32,7 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 0, o_set = 0;
+	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 1, o_set = 0;
 	sdict_t *d;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBF:")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBbF:")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 		else if (c == 'n') opt.n_rounds = atoi(optarg);
 		else if (c == 'C') opt.cov_ratio = atof(optarg);
 		else if (c == 'B') bi_dir = 1;
+		else if (c == 'b') bi_dir = 0;
 		else if (c == 'F') opt.final_ovlp_drop_ratio = atof(optarg);
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
@@ -94,7 +95,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -F FLOAT    aggressive overlap dro ratio in the end [%.2g]\n", opt.final_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
-		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n");
+//		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n"); // deprecated; for backward compatibility
+		fprintf(stderr, "    -b          both directions of an arc are present in intput\n");
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
 		fprintf(stderr, "    -2          skip 2-pass read selection\n");
 		fprintf(stderr, "    -V          print version number\n");
