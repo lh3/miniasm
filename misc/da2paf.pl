@@ -2,8 +2,12 @@
 
 use strict;
 use warnings;
+use Getopt::Std;
 
-die("Usage: ls *.las | xargs -i LAdump -cd reads.db {} | da2paf.pl <(DBdump -rh reads.db)\n") if @ARGV < 1;
+my %opts;
+getopts("2", \%opts);
+die("Usage: ls *.las | xargs -i LAdump -cd reads.db {} | da2paf.pl [-2] <(DBdump -rh reads.db)\n") if @ARGV < 1;
+my $is_dbl = defined($opts{2});
 
 warn("Reading sequence lengths...\n");
 my $fn = shift(@ARGV);
@@ -19,13 +23,14 @@ while (<FH>) {
 close(FH);
 
 warn("Converting mappings...\n");
-my ($id0, $id1, $strand, $ab, $ae, $bb, $be);
+my ($id0, $id1, $strand, $ab, $ae, $bb, $be, $skip);
 while (<>) {
 	if (/^P\s(\S+)\s(\S+)\s([nc])/) {
 		$id0 = $1; $id1 = $2; $strand = $3 eq 'n'? '+' : '-';
-	} elsif (/^C\s(\d+)\s(\d+)\s(\d+)\s(\d+)/) {
+		$skip = !$is_dbl && $id0 > $id1? 1 : 0;
+	} elsif (!$skip && /^C\s(\d+)\s(\d+)\s(\d+)\s(\d+)/) {
 		$ab = $1, $ae = $2, $bb = $3, $be = $4;
-	} elsif (/^D\s(\d+)/) {
+	} elsif (!$skip && /^D\s(\d+)/) {
 		my $bl = $ae - $ab > $be - $bb? $ae - $ab : $be - $bb;
 		my $ml = $bl - $1;
 		if ($strand eq '+') {

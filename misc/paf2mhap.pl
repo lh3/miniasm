@@ -5,11 +5,10 @@ use warnings;
 use Getopt::Std;
 
 my %opts = ();
-getopts("2p", \%opts);
-my $is_dbl = defined($opts{2});
+getopts("p", \%opts);
 my $is_100 = defined($opts{p});
 
-die("Usage: paf2mhap.pl [-2p] <in.fa> <in.paf>\n") if (@ARGV == 0);
+die("Usage: paf2mhap.pl [-p] <in.fa> <in.paf>\n") if (@ARGV == 0);
 
 warn("Parsing FASTA to create the name<=>id table...\n");
 my %hash;
@@ -28,7 +27,6 @@ while (<>) {
 	chomp;
 	my @t = split;
 	next if ($t[0] eq $t[5]); # NB: ignore self matches
-	next if (!$is_dbl && $t[0] gt $t[5]);
 	my $cnt = /cm:i:(\d+)/? $1 : 0;
 	my $r = $t[9] / $t[10];
 	$r = sprintf("%.4f", $is_100? 100. * $r : $r);

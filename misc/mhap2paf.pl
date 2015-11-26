@@ -8,7 +8,7 @@ my %opts = ();
 getopts("2", \%opts);
 my $is_dbl = defined($opts{2});
 
-die("Usage: mhap2paf.pl [-1] <in.mhap>\n") if (@ARGV == 0 && -t STDIN);
+die("Usage: mhap2paf.pl [-2] <in.mhap>\n") if (@ARGV == 0 && -t STDIN);
 
 while (<>) {
 	chomp;
