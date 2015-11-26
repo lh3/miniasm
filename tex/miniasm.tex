@@ -28,13 +28,13 @@ present, long reads have an error rate as high as 10--15\%.  Complex and
 computationally intensive pipelines are required to assemble such reads.
 
 \section{Results:} We present a new mapper, minimap, and a \emph{de novo}
-assembler, miniasm, for efficiently mapping and assembling SMRT and ONT reads,
-though without a consensus step. They can often assemble a sequencing run of
+assembler, miniasm, for efficiently mapping and assembling SMRT and ONT reads
+without an error correction stage. They can often assemble a sequencing run of
 bacterial data into a single contig in a few minutes, and assemble 45-fold
-\emph{C. elegans} data in 10 minutes, one to two orders of magnitude times
-faster than the existing pipelines. We also introduce a pairwise read mapping
-format (PAF) and a graphical fragment assembly format (GFA), and demonstrate
-the interoperability between ours and current tools.
+\emph{C. elegans} data in 9 minutes, orders of magnitude faster than the
+existing pipelines. We also introduce a pairwise read mapping format (PAF) and
+a graphical fragment assembly format (GFA), and demonstrate the
+interoperability between ours and current tools.
 
 \section{Availability and implementation:} https://github.com/lh3/minimap and
 https://github.com/lh3/miniasm
@@ -107,7 +107,6 @@ Assembly & wgs-assembler & \citet{Myers:2000kl} \\
 & miniasm & this article \\
 Consensus polish & Quiver & http://bit.ly/pbquiver \\
 & nanopolish & \citet{Loman:2015xu} \\
-Assembly viewer & Bandage & \citet{Wick:2015qf}\\
 \botrule
 \end{tabular}
 }{}
@@ -703,7 +702,7 @@ times faster than PBcR excluding the time spent on error correction.
 \begin{figure}[tb]
 \includegraphics[width=.48\textwidth]{ce}
 \caption{Dotter plot comparing the miniasm assembly and the {\it C. elegans}
-reference genome. Thin gray lines are boundaries of contigs or chromosomes. The
+reference genome. Thin gray lines mark the contig or chromosome boundaries. The
 three arrows indicate large-scale misassemblies visible from the
 plot. The mapping is done with `minimap -L500'.}\label{fig:ce}
 \end{figure}
@@ -739,6 +738,50 @@ in a batch while a large batch usually helps performance. We should note that
 DALIGNER generates alignments while minimap does not. Minimap would possibly be
 slower if it included an alignment step. The performance of DALIGNER is very
 impressive.
+
+\section{Discussions}
+
+Miniasm confirms that long noisy reads can be assembled without an error
+correction stage, and without this stage, the assembly process can be greatly
+accelerated and simplified, while achieving comparable contiguity and accuracy
+to existing pipelines at large scale, at least for genomes without excessive
+repetitive sequences. If we can develop a fast tool to generate high-quality
+contig sequences which miniasm currently lacks, we may be able to dramatically
+speed up the entire assembly pipeline.
+
+Our main concern with miniasm is that when we look at a low-identity match
+between two noisy reads, it is difficult to tell whether the low identity is
+caused by the stochstically higher base error rate on reads, or by collapsing
+reads from two recent segmental duplications and repeats of similar sequences. 
+In comparison, error correction takes the advantage of multiple reads and in
+theory has more power to distinguish high error rate from duplications/repeats.
+Bacteria and {\it C. elegans} evaluated in this article are repeat sparse.
+Miniasm might have issues with repeat-rich genomes.  In addition, miniasm has
+not been optimized for large repeat-rich genomes. It reads all hits into RAM,
+which may not be practical when there are too many. We need to filter
+repetitive hits, introduce disk-based algorithms (e.g. for sorting) or stream
+hits before removing contained reads. Working with large complex genomes will
+be important to the future development of miniasm.
+
+Minimap is primarily used as a read overlapper in this article, but it has a
+wider applications in addition to overlapping.  For example, with four CPU
+cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5 minutes,
+map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3 minutes
+and to pre-indexed 100Gb nt database in an hour with a third of time spent on
+loading the index from the network file system. Minimap can also perform whole
+genome alignment. For example, it maps 2800 bacterial genomes to themselves in
+an hour. Minimap is fast but is not as sensitive as proper whole-genome
+aligners such as LASTZ~\citep{harris:2007aa} and LAST~\citep{Kiebasa:2011aa}.
+They use shorter spaced seeds which greatly helps sensitivity at the cost of
+performance.
+
+\section*{Acknowledgement}
+We are grateful to Gene Myers, Jason Chin, Adam Phillippy, Jared Simpson, Nick
+Loman and Ivan Sovic for their presentations, talks, comments on social media
+and unpublished works which have greatly influenced and helped the development
+of minimap and miniasm.
+
+\paragraph{Funding\textcolon} NHGRI U54HG003037; NIH GM100233
 
 \bibliography{miniasm}
 \end{document}
