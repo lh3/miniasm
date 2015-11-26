@@ -688,7 +688,7 @@ ONT data sets, PBcR produced more fragmented assemblies for MAP-006-2,
 MAP-006-pcr-1 and MAP-006-pcr-2, and deleted a 300kb region for the PBcR-ONT-ec
 data set. 
 
-With four CPU cores, it took miniasm 13 seconds to assemble the 30-fold
+With four CPU cores, it took miniasm 14 seconds to assemble the 30-fold
 PBcR-PB-ec data set and 2 minutes to assemble the 160-fold PB-ecoli data set.
 PBcR, with four CPU cores, too, is about 60 times slower on PB-ecoli and 700
 times slower on PBcR-PB-ec.  The performance is worse on low-coverage input
@@ -705,7 +705,7 @@ times faster than PBcR excluding the time spent on error correction.
 \caption{Dotter plot comparing the miniasm assembly and the {\it C. elegans}
 reference genome. Thin gray lines are boundaries of contigs or chromosomes. The
 three arrows indicate large-scale misassemblies visible from the
-plot. The mapping is done by `minimap -L500'.}\label{fig:ce}
+plot. The mapping is done with `minimap -L500'.}\label{fig:ce}
 \end{figure}
 
 We assembled a 45-fold {\it C. elegans} data set (Table~4). With 16 CPU cores,
@@ -724,6 +724,21 @@ reference genome and the contigs.
 We have also tried PBcR on this data set. Based on the intermediate progress
 report, we estimated that with 16 CPU cores, it would take a week or so to
 finish the assembly in the automatically chosen `sensitive' mode.
+
+\subsection{Working with other overlappers}
+
+In addition to minimap, other overlappers may also work with miniasm as long as
+they output PAF or a format that can be converted to PAF.  On the 30-fold
+PBcR-PB-ec data set, we are able to produce a single contig with DALIGNER
+(option -k15 -h50), MHAP (option \mbox{--pacbio-sensitive}) and GraphMap
+(option -w owler). DALIGNER is the fastest, taking 65 seconds with four CPUs.
+Minimap is five times as fast on this data set and is 18 times as fast on
+PB-ecoli at 160-fold. Minimap is faster on larger data sets possibly because
+without staging all possible hits in RAM, minimap is able to process more reads
+in a batch while a large batch usually helps performance. We should note that
+DALIGNER generates alignments while minimap does not. Minimap would possibly be
+slower if it included an alignment step. The performance of DALIGNER is very
+impressive.
 
 \bibliography{miniasm}
 \end{document}
