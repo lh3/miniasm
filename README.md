@@ -3,27 +3,17 @@
 ## Getting Started
 
 ```sh
-# Download Oxford Nanopore 2D reads (from the Loman lab)
-wget -O reads.fa http://nanopore.climb-radosgw01.bham.ac.uk/MAP006-1_2D_pass.fasta
+# Download sample PacBio from the PBcR website
+wget -O-  http://www.cbcb.umd.edu/software/PBcR/data/selfSampleData.tar.gz | tar zxf -
+cd selfSampleData; ln -s pacbio_filtered.fastq reads.fq
 # Install minimap and miniasm (requiring gcc and zlib)
 git clone https://github.com/lh3/minimap && (cd minimap && make)
 git clone https://github.com/lh3/miniasm && (cd miniasm && make)
 # Overlap
-minimap/minimap -Sw5 -L100 -m0 -t8 reads.fa reads.fa | gzip -1 > reads.paf.gz
+minimap/minimap -Sw5 -L100 -m0 -t8 reads.fq reads.fq | gzip -1 > reads.paf.gz
 # Layout
-miniasm/miniasm -f reads.fa reads.paf.gz > reads.gfa
+miniasm/miniasm -f reads.fq reads.paf.gz > reads.gfa
 ```
-Example datasets for PacBio: [PB-151103][PB-151103] and [ERS743109][ERS743109].
-If you are not familiar with PacBio data, you can extract ERS743109 reads in
-the fasta format as follows:
-```sh
-wget http://lh3lh3.users.sf.net/download/pls2fasta && chmod 755 pls2fasta
-seq 3 | xargs -i wget -O {}.bax.h5 ftp://ftp.sra.ebi.ac.uk/vol1/ERA472/ERA472339/pacbio_hdf5/m150622_205359_00127_c100790292550000001823177509091575_s1_p0.{}.bax.h5
-seq 3 | xargs -i ./pls2fasta {}.bax.h5 {}.fa -trimByRegion
-seq 3 | xargs -i cat {}.fa | gzip -1 > reads.fa.gz
-```
-Assembling these reads takes 3-5 minutes, though downloading the data probably
-takes much longer.
 
 ## Introduction
 
