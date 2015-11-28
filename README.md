@@ -4,8 +4,8 @@
 
 ```sh
 # Download sample PacBio from the PBcR website
-wget -O-  http://www.cbcb.umd.edu/software/PBcR/data/selfSampleData.tar.gz | tar zxf -
-cd selfSampleData; ln -s pacbio_filtered.fastq reads.fq
+wget -O- http://www.cbcb.umd.edu/software/PBcR/data/selfSampleData.tar.gz | tar zxf -
+ln -s selfSampleData/pacbio_filtered.fastq reads.fq
 # Install minimap and miniasm (requiring gcc and zlib)
 git clone https://github.com/lh3/minimap && (cd minimap && make)
 git clone https://github.com/lh3/miniasm && (cd miniasm && make)
