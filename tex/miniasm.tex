@@ -423,11 +423,7 @@ chimaera. The first step of assembly to reduce such artifacts by examining
 read-to-read mappings. For each read, miniasm finds the longest region that is
 covered by three or more good mappings (longer than 2000bp with at least 100bp
 non-redundant bases on matching minimizers) and trims bases outside the region.
-It uses the good mappings to get a very crude estiamte of sequencing coverage.
-If the coverage is more than 20-fold, miniasm applies the previous filtering
-strategy again but requiring reads to be covered by more good mappings (by
-default, 15\% of estiamted coverage). While trimming reads, miniasm also trims
-mappings.
+While trimming reads, miniasm also trims mappings.
 
 \subsubsection{Generating assembly graph}
 
@@ -741,13 +737,16 @@ impressive.
 
 \section{Discussions}
 
-Miniasm confirms that long noisy reads can be assembled without an error
-correction stage, and without this stage, the assembly process can be greatly
-accelerated and simplified, while achieving comparable contiguity and accuracy
-to existing pipelines at large scale, at least for genomes without excessive
-repetitive sequences. If we can develop a fast tool to generate high-quality
-contig sequences which miniasm currently lacks, we may be able to dramatically
-speed up the entire assembly pipeline.
+Miniasm confirms our speculation that long noisy reads can be assembled without
+an error correction stage, and without this stage, the assembly process can be
+greatly accelerated and simplified, while achieving comparable contiguity and
+large-scale accuracy to existing pipelines, at least for genomes without
+excessive repetitive sequences. If we can develop a fast tool to generate
+high-quality contig sequences which miniasm currently lacks, we may be able to
+dramatically speed up the entire assembly pipeline. For MinION, which allows
+users to pause sequencing and reload samples, a fast assembly will not only
+alleviate the computational burden, but also help us to decide if enough data
+have been collected.
 
 Our main concern with miniasm is that when we look at a low-identity match
 between two noisy reads, it is difficult to tell whether the low identity is
@@ -776,10 +775,12 @@ They use shorter spaced seeds which greatly helps sensitivity at the cost of
 performance.
 
 \section*{Acknowledgement}
-We are grateful to Gene Myers, Jason Chin, Adam Phillippy, Jared Simpson, Nick
-Loman and Ivan Sovic for their presentations, talks, comments on social media
-and unpublished works which have greatly influenced and helped the development
-of minimap and miniasm.
+
+We thank Pall Melsted for maintaining the GFA spec and are grateful to Gene
+Myers, Jason Chin, Adam Phillippy, Jared Simpson, Zamin Iqbal, Nick Loman and
+Ivan Sovic for their presentations, talks, comments on social media and
+unpublished works which have greatly influenced and helped the development of
+minimap and miniasm.
 
 \paragraph{Funding\textcolon} NHGRI U54HG003037; NIH GM100233
 
