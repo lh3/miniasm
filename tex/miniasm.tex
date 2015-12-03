@@ -140,7 +140,7 @@ starting at $i$.
 
 \subsection{Minimap}
 
-\subsubsection{Overview of $k$-mer based sequence simiarity search}\label{sec:minimapov}
+\subsubsection{Overview of $k$-mer based sequence similarity search}\label{sec:minimapov}
 
 BLAST~\citep{Altschul:1997vn} and BLAT~\citep{Kent:2002jk} are among the most
 popular sequence similarity search tools. They use one $k$-mer hash function
@@ -205,7 +205,7 @@ genome-to-genome mapper. It has more potential applications.
 \KwIn{Parameter $w$ and $k$ and sequence $s$ with $|s|\ge w+k-1$}
 \KwOut{($w$,$k$)-minimizers, their positions and strands}
 \BlankLine
-\textbf{Function} {\sc MinizerSketch}$(s,w,k)$
+\textbf{Function} {\sc MinimizerSketch}$(s,w,k)$
 \Begin {
 	$\mathcal{M}\gets\emptyset$\Comment*[r]{NB: $\mathcal{M}$ is a set; no duplicates}
 	\For{$i\gets1$ \KwTo $|s|-w-k+1$} {
@@ -300,7 +300,7 @@ minimizers.
 \Begin {
 	$\mathcal{H}\gets$ empty hash table\;
 	\For{$t\gets1$ \KwTo $T$} {
-		$\mathcal{M}\gets${\sc MinizerSketch}$(s_t,w,k)$\;
+		$\mathcal{M}\gets${\sc MinimizerSketch}$(s_t,w,k)$\;
 		\ForEach{$(h,i,r)\in \mathcal{M}$} {
 			$\mathcal{H}[h]\gets\mathcal{H}[h]\cup\{(t,i,r)\}$\;
 		}
@@ -334,7 +334,7 @@ or 2) $x=1$ and $|(i_1+i'_1)-(i_2+i'_2)|<\epsilon$. Intuitively,
 $\epsilon$-away hits are approximately colinear within a band of width
 $\epsilon$.  Given a set of minimizer hits $\{(h,x,i,i')\}$, we can cluster
 $i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
-This procedure is inspried by Hough Transformation mentioned
+This procedure is inspired by Hough Transformation mentioned
 by~\citet{sovic:2015aa}. 
 
 \begin{algorithm}[tb]
@@ -346,7 +346,7 @@ by~\citet{sovic:2015aa}.
 \textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,g)$
 \Begin {
 	$\mathcal{A}\gets$ empty array\;
-	$\mathcal{M}\gets${\sc MinizerSketch}$(q,w,k)$\;
+	$\mathcal{M}\gets${\sc MinimizerSketch}$(q,w,k)$\;
 	\nl\ForEach (\Comment*[f]{Collect minimizer hits}) {$(h,i,r)\in \mathcal{M}$} {
 		\ForEach{$(t,i',r')\in \mathcal{H}[h]$} {
 			\uIf (\Comment*[f]{Minimizers on the same strand}) {$r=r'$} {
@@ -391,13 +391,13 @@ of $v$'s prefix that does not overlap $w$.
 
 Let $G=(V,E,\ell)$ be a graph without multi-edges, where $V$ is a
 set of DNA sequences (vertices), $E$ a set of overlaps between them (edges) and
-$\ell:E\to\Re_+$ is the edge length fuction. $G$ is said to be
+$\ell:E\to\Re_+$ is the edge length function. $G$ is said to be
 \emph{Watson-Crick complete} if i) $\forall v\in V$, $\overline{v}\in V$ and
 ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
 be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
 is an \emph{assembly graph}. In an assembly graph, vertices $v$ and
-$\overline{v}$ are \emph{complement} to each otehr; edges $v\to w$ and
+$\overline{v}$ are \emph{complement} to each other; edges $v\to w$ and
 $\overline{w}\to\overline{v}$ are \emph{complement} to each other. Let
 $\mathrm{deg}^+(v)$ be the indegree of $v$ and $\mathrm{deg}^-(v)$ be the
 outdegree. It follows that $\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
@@ -435,7 +435,7 @@ While trimming reads, miniasm also trims mappings.
 \includegraphics[width=.45\textwidth]{overhang}
 \caption{Mapping between two reads. $b[1]$ and $e[1]$ are the starting the
 ending mapping coordinates of the first read $v$, respectively. $b[2]$ and
-$e[2]$, $b[2]<e[2]$, are the coordiantes on the mapping strand of the second
+$e[2]$, $b[2]<e[2]$, are the coordinates on the mapping strand of the second
 read $w$. Lightgray areas indicate regions that would be mapped together if the
 overlap was perfect. If the overhang regions are small enough, the figure
 implies an edge $v\to\overline{w}$ with $\ell(v\to\overline{w})=b[1]-b[2]$ and
@@ -557,7 +557,7 @@ Col & Type & Description \\
 1 & string & Query sequence name \\
 2 & int    & Query sequence length \\
 3 & int    & Query start coordinate (0-based) \\
-4 & int    & Query end coodinate (0-based) \\
+4 & int    & Query end coordinate (0-based) \\
 5 & char   & `+' if query and target on the same strand; `-' if opposite \\
 6 & string & Target sequence name \\
 7 & int    & Target sequence length \\
@@ -684,7 +684,7 @@ generated fragmented assemblies when we sampled a third of reads. We speculate
 the shorter read lengths of the ERS* data sets made it more difficult to
 produce good assemblies at relatively low coverage.
 
-We have also run the PBcR pipeline~\citep{Berlin:2015xy}. PBcR reqires a spec
+We have also run the PBcR pipeline~\citep{Berlin:2015xy}. PBcR requires a spec
 file. We took `pacbio.spec' and `oxford.spec' from PBcR-PB-ec and PBcR-ONT-ec,
 respectively, and applied them to all data sets based on their data types. MAP*
 data sets only provide FASTA sequences for download. We assigned quality 9 to
@@ -761,7 +761,7 @@ have been collected.
 
 Our main concern with miniasm is that when we look at a low-identity match
 between two noisy reads, it is difficult to tell whether the low identity is
-caused by the stochstically higher base error rate on reads, or by collapsing
+caused by the stochastically higher base error rate on reads, or by collapsing
 reads from two recent segmental duplications and repeats of similar sequences. 
 In comparison, error correction takes the advantage of multiple reads and in
 theory has more power to distinguish high error rate from duplications/repeats.
