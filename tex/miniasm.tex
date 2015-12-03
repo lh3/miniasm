@@ -57,7 +57,7 @@ assemblies than a few years ago, the contiguity and completeness of the
 assemblies are still not as good as the old Sanger
 assemblies~\citep{Chaisson:2015wj}.
 
-The SMRT technology developed by PacBio arose partly as an answer to the
+The PacBio's SMRT technology were developed partly as an answer to the
 problem with short-read \emph{de novo} assembly. However, due to the high
 per-base error rate, around 15\%, these reads were only used as a complement to
 short reads~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
@@ -78,7 +78,7 @@ corrected reads and (iv) contig consensus polish. Stage (iii) also involves
 all-vs-all read mapping, but as the error rate is much reduced at this step,
 it is easier and faster than stage (i).
 
-Table~1 shows the published and unpublished tools used for each stage. Notably,
+Table~1 shows the tools used for each stage. Notably, our tool
 minimap is a raw read overlapper and miniasm is an assembler. Different from
 published pipelines, our approach skips the error correction stage.  It
 directly takes overlaps between raw reads and produce unpolished contig
@@ -116,8 +116,8 @@ As we can see from Table~1, each stage can be achieved with multiple tools.
 Although we have successfully combined tools into different pipelines, we
 usually need to change or convert the input/output formats to make them work
 together. Another contribution of this article is the proposal of concise
-mapping and assembly formats, which may encourage modular design of assemblers
-and the associated tools.
+mapping and assembly formats, which will hopefully encourage modular design of
+assemblers and the associated tools.
 
 \begin{methods}
 \section{Methods}
@@ -132,7 +132,7 @@ its \emph{reverse complement} is $\overline{s}=\overline{a_1a_2\cdots
 a_n}=\overline{a}_n\overline{a}_{n-1}\cdots\overline{a}_1$.
 For convenience, we define strand function
 $\pi:\Sigma^*\times\{0,1\}\to\Sigma^*$ such that $\pi(s,0)=s$ and
-$\pi(s,1)=\overline{s}$.
+$\pi(s,1)=\overline{s}$. Here $\Sigma^*$ is the set of all DNA sequences.
 
 By convention, we call a $k$-long DNA sequence as a $k$-mer. We use the
 notation $s^k_i=a_i\cdots a_{i+k-1}$ to denote a $k$-long substring of $s$
@@ -144,7 +144,7 @@ starting at $i$.
 
 BLAST~\citep{Altschul:1997vn} and BLAT~\citep{Kent:2002jk} are among the most
 popular sequence similarity search tools. They use one $k$-mer hash function
-$\phi:\Sigma^k\to\mathbb{Z}$ to hash $k$-mers at the position
+$\phi:\Sigma^k\to\mathbb{Z}$ to hash $k$-mers at the positions
 $1,w+1,2w+1,\ldots$ of a target sequence and keep the hash values in a hash
 table. Upon query, they use the same hash function on every $k$-mer of the
 query sequence and look up the hash table for potential matches. If there are
@@ -174,7 +174,7 @@ like MHAP but takes minimizers \citep{Roberts:2004fv} as a reduced
 representation instead; it stores $k$-mers in a hash table like BLAT and MHAP
 but also uses sorting extensively like DALIGNER. In addition, minimap is
 designed not only as a read overlapper but also as a read-to-genome and
-genome-to-genome mapper. It has a wider range of applications.
+genome-to-genome mapper. It has more potential applications.
 
 %\subsubsection{Overview of the minimap algorithm}
 %
@@ -199,7 +199,7 @@ genome-to-genome mapper. It has a wider range of applications.
 
 \subsubsection{Computing minimizers}
 
-\begin{algorithm}[ht]
+\begin{algorithm}[tb]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Parameter $w$ and $k$ and sequence $s$ with $|s|\ge w+k-1$}
@@ -235,7 +235,7 @@ smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. Formally,
 let $\phi:\Sigma^k\to\mathbb{Z}$ be a function that maps any $k$-mer to an integer.
 A \emph{double-strand $(w,k,\phi)$-minimizer}, or simply a \emph{minimizer}, of a
 string $s$, $|s|\ge w+k-1$, is a triple $(h,i,r)$ such that there exists
-$\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which makes
+$\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which renders
 $$
 h=\phi(\pi(s_i^k,r))=\min\big\{\phi(\pi(s_{j+p}^k,r')):0\le p<w,r'\in\{0,1\}\big\}
 $$
@@ -251,7 +251,7 @@ $k$-mer $s=a_1\cdots a_k$, define
 $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
-It always maps a $k$-mer to a distinct integer. A problem with this function is
+It always maps a $k$-mer to a distinct integer with at most $2k$ bits. A problem with this function is
 that ploy-A, which is often highly enriched in genomes, always gets zero, the
 smallest value. The function may oversample these non-informative poly-A and
 hurts practical performance. To alleviate this issue, we use $\phi'=h\circ\phi$
@@ -261,7 +261,7 @@ is not critical to the computation of minimizers, but as such $\phi'$ never
 maps two distinct $k$-mers to the same $2k$-bit integer, it helps to reduce
 hash collisions.
 
-\begin{algorithm}[ht]
+\begin{algorithm}[tb]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{$p$-bit integer $x$}
@@ -283,14 +283,14 @@ hash collisions.
 \end{algorithm}
 
 Note that in a window of $w$ consecutive $k$-mers, there may be more than one
-minimizers. Algorithm~1 keeps them all with the loop at line~2. This makes a
-minimizer of $s$ always correspond to a minimizer of $\overline{s}$.
+minimizers. Algorithm~1 keeps them all with the loop at line~2. This way, a
+minimizer of $s$ always corresponds to a minimizer of $\overline{s}$.
 \citet{Roberts:2004fv} did not discuss the treatment of such equally good
 minimizers.
 
 \subsubsection{Indexing}
 
-\begin{algorithm}[ht]
+\begin{algorithm}[tb]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Set of target sequences $\mathcal{T}=\{s_1,\ldots,s_T\}$}
@@ -310,7 +310,7 @@ minimizers.
 \caption{Index target sequences}
 \end{algorithm}
 
-Algorithm~3 describes target indexing. It keeps minimizers in all target
+Algorithm~3 describes target indexing. It keeps minimizers of all target
 sequences in a hash table where the key is the minimizer hash and the value is
 a set of target sequence index, the position of the minimizer and the strand
 (packed into one 64-bit integer).
@@ -337,7 +337,7 @@ $i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
 This procedure is inspried by Hough Transformation mentioned
 by~\citet{sovic:2015aa}. 
 
-\begin{algorithm}[ht]
+\begin{algorithm}[tb]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Hash table $\mathcal{H}$ and query sequence $q$}
@@ -389,21 +389,24 @@ If we regard strings $v$ and $w$ as vertices, the overlap relationship defines
 a directed edge between them. The \emph{length} of $v\to w$ equals the length
 of $v$'s prefix that does not overlap $w$.
 
-Let $G=(V,E,\ell)$ be a simple graph (i.e. no multi-edges or loops), where $V$ is a
+Let $G=(V,E,\ell)$ be a graph without multi-edges, where $V$ is a
 set of DNA sequences (vertices), $E$ a set of overlaps between them (edges) and
 $\ell:E\to\Re_+$ is the edge length fuction. $G$ is said to be
 \emph{Watson-Crick complete} if i) $\forall v\in V$, $\overline{v}\in V$ and
 ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
 be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
-is an \emph{assembly graph}. Let $\mathrm{deg}^+(v)$ be the indegree of $v$ and
-$\mathrm{deg}^-(v)$ be the outdegree. It follows that
-$\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
+is an \emph{assembly graph}. In an assembly graph, vertices $v$ and
+$\overline{v}$ are \emph{complement} to each otehr; edges $v\to w$ and
+$\overline{w}\to\overline{v}$ are \emph{complement} to each other. Let
+$\mathrm{deg}^+(v)$ be the indegree of $v$ and $\mathrm{deg}^-(v)$ be the
+outdegree. It follows that $\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
 
 An assembly graph has the same topology as a string graph~\citep{Myers:2005bh},
 though the interpretation of the vertex set $V$ is different. In a string
 graph, $V$ is the set of the two ends of sequences, not the set of forward and
-reverse-complemented sequences.
+reverse-complemented sequences. De Bruijn graph can be regarded as a special
+case of overlap graph. It is also an assembly graph.
 
 In an assembly graph, an edge $v\to w$ is \emph{transitive} if there exist
 $v\to u$ and $u\to w$. Removing a transitive edge does not affect the
@@ -427,7 +430,7 @@ While trimming reads, miniasm also trims mappings.
 
 \subsubsection{Generating assembly graph}
 
-\begin{figure}[ht]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=.45\textwidth]{overhang}
 \caption{Mapping between two reads. $b[1]$ and $e[1]$ are the starting the
@@ -440,7 +443,7 @@ an edge $w\to\overline{v}$ with
 $\ell(w\to\overline{v})=(l[2]-e[2])-(l[1]-e[1])$.}\label{fig:overhang}
 \end{figure}
 
-\begin{algorithm}[ht]
+\begin{algorithm}[bt]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Read length $l$, mapping begin coordinate $b$ and mapping end $e$ of the
@@ -475,7 +478,7 @@ assembly graph.
 
 \subsubsection{Graph cleaning}
 
-\begin{algorithm}[ht]
+\begin{algorithm}[tb]
 \DontPrintSemicolon
 \footnotesize
 \KwIn{$G=(V,E)$, starting vertex $v_0$ and maximum probe distance $d$}
@@ -540,7 +543,7 @@ shorter overlaps after transitive reduction may be due to repeats.
 However, non-repetitive overlaps may also be removed at a small chance, which
 leads to missing overlaps and misassemblies.
 
-\subsection{Formats}
+\subsection{Formats: PAF and GFA}
 
 \subsubsection{Pairing mapping format (PAF)}
 
@@ -606,15 +609,23 @@ additional SAM-like typed key-value pairs.}
 
 GFA is a concise assembly format (http://bit.ly/gfaspec) initially proposed by
 us prior to miniasm and later improved by community (P. Melsted, S.  Jackman,
-J. Simpson and E. Garrison, personal communication). It has already been
-adopted by a few tools.  Notably, FASTG (http://bit.ly/fastgfmt) is another
-assembly format, but it is primarily designed to describe the final assembly
-graph, not the intermediate assembly graph. GFA is designed for both types of
-graphs.
+J. Simpson and E. Garrison, personal communication). GFA has an explicit
+relationship to an assembly graph -- an `S' line in the GFA corresponds to a
+vertex and its complement in the graph; an `L' line corresponds to an edge and
+its complement. GFA is able to represent graphs produced at all the stages of
+an assembly pipeline, from initial read overlaps before transitive reduction to
+the unitig relationship in the final assembly.
+
+FASTG (http://bit.ly/fastgfmt) is another assembly format prior to GFA.
+It uses different terminologies. A vertex in an assembly graph is called an
+edge in FASTG, and an edge is called an adjacency. In FASTG, subgraphs can be
+nested, though no tools work with nested graphs due to technical complications.
+In addition, with nesting, one assembly graph can be represented in distinct
+ways, which we regard as a limitation of FASTG.
 
 \end{methods}
 
-\begin{table}[htb]
+\begin{table}[tb]
 \processtable{Evaluation data sets}
 {\footnotesize
 \begin{tabular}{llrrr}
@@ -737,7 +748,7 @@ impressive.
 
 \section{Discussions}
 
-Miniasm confirms our speculation that long noisy reads can be assembled without
+Miniasm confirms the speculation that long noisy reads can be assembled without
 an error correction stage, and without this stage, the assembly process can be
 greatly accelerated and simplified, while achieving comparable contiguity and
 large-scale accuracy to existing pipelines, at least for genomes without
@@ -763,16 +774,26 @@ hits before removing contained reads. Working with large complex genomes will
 be important to the future development of miniasm.
 
 Minimap is primarily used as a read overlapper in this article, but it has a
-wider applications in addition to overlapping.  For example, with four CPU
-cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5 minutes,
-map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3 minutes
-and to pre-indexed 100Gb nt database in an hour with a third of time spent on
-loading the index from the network file system. Minimap can also perform whole
-genome alignment. For example, it maps 2800 bacterial genomes to themselves in
-an hour. Minimap is fast but is not as sensitive as proper whole-genome
-aligners such as LASTZ~\citep{harris:2007aa} and LAST~\citep{Kiebasa:2011aa}.
-They use shorter spaced seeds which greatly helps sensitivity at the cost of
-performance.
+wider range applications in addition to overlapping.  For example, with four
+CPU cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5
+minutes, map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3
+minutes and to pre-indexed 100Gb nt database in an hour with a third of time
+spent on loading the index from the network file system. It can also map 2800
+bacterial genomes to themselves in an hour. Minimap is fast, but is not as
+sensitive as proper whole-genome aligners and recent long-read aligners such as
+LASTZ~\citep{harris:2007aa}, LAST~\citep{Kiebasa:2011aa} and GraphMap. They use
+shorter spaced seeds which greatly help sensitivity at the cost of performance.
+
+Oxford Nanopore is working on PromethIon and PacBio will deliver PacBio Sequel
+next year. Both sequencers promise significantly reduced sequencing cost and
+increased throughput, which may stimulate the adoption of long-read sequencing
+and subsequently the development of long-read mappers and assemblers. We hope
+in this process, the community could standardize the input and output formats
+of various tools, so that a developer could focus on a component he or she
+understands best. Such a modular approach has been proved to be fruitful in the
+development of short-read tools -- in fact, the best short-read pipelines all
+consist of components developed by different groups -- and will be equally
+beneficial to the future development of long-read mappers and assemblers.
 
 \section*{Acknowledgement}
 
