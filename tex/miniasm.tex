@@ -21,7 +21,7 @@
 
 \begin{abstract}
 
-\section{Motivation:} Single Molecule Real-Time (SMRT) technology and Oxford
+\section{Motivation:} Single Molecule Real-Time (SMRT) sequencing technology and Oxford
 Nanopore technologies (ONT) produce reads over 10kbp in length, which have
 enabled high-quality genome assembly at an affordable cost.  However, at
 present, long reads have an error rate as high as 10--15\%.  Complex and
@@ -60,7 +60,7 @@ assemblies~\citep{Chaisson:2015wj}.
 The PacBio's SMRT technology were developed partly as an answer to the
 problem with short-read \emph{de novo} assembly. However, due to the high
 per-base error rate, around 15\%, these reads were only used as a complement to
-short reads~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
+short reads initially~\citep{Bashir:2012gb,Ribeiro:2012bx,Koren:2012pt},
 until~\citet{Chin:2013qr} and~\citet{Koren:2013fc} demonstrated the feasibility
 of SMRT-only assembly. Since then, SMRT is becoming the preferred technology
 for finishing small genomes and producing high-quality Eukaryotic
@@ -74,21 +74,19 @@ high-quality bacterial assembly with ONT data alone.
 
 Published long-read assembly pipelines all include four stages: (i) all-vs-all
 raw read mapping, (ii) raw read error correction, (iii) assembly of error
-corrected reads and (iv) contig consensus polish. Stage (iii) also involves
-all-vs-all read mapping, but as the error rate is much reduced at this step,
-it is easier and faster than stage (i).
-
-Table~1 shows the tools used for each stage. Notably, our tool
-minimap is a raw read overlapper and miniasm is an assembler. Different from
-published pipelines, our approach skips the error correction stage.  It
-directly takes overlaps between raw reads and produce unpolished contig
-sequences. The idea of correction-free assembly was inspired by a series of
-talks given by Gene Myers. Sikic et al (personal communication) are also
-independently exploring such an approach.
+corrected reads and (iv) contig consensus polish. Stage (iii) may involve
+all-vs-all read mapping again, but as the error rate is much reduced at this
+step, it is easier and faster than stage (i). Table~\ref{tab:tools} shows the tools used for
+each stage. Notably, our tool minimap is a raw read overlapper and miniasm is
+an assembler. We do not correct sequencing errors, but instead directly produce
+unpolished contig sequences from overlaps between raw reads.  The idea of
+correction-free assembly was inspired by a series of talks given by Gene Myers.
+Sikic et al (personal communication) are also independently exploring such an
+approach.
 
 \begin{table}[b]
 \processtable{Tools for noisy long-read assembly}
-{\footnotesize
+{\footnotesize\label{tab:tools}
 \begin{tabular}{p{2.4cm}p{2cm}l}
 \toprule
 Functionality & Program & Reference \\
@@ -112,7 +110,7 @@ Consensus polish & Quiver & http://bit.ly/pbquiver \\
 }{}
 \end{table}
 
-As we can see from Table~1, each stage can be achieved with multiple tools.
+As we can see from Table~\ref{tab:tools}, each stage can be achieved with multiple tools.
 Although we have successfully combined tools into different pipelines, we
 usually need to change or convert the input/output formats to make them work
 together. Another contribution of this article is the proposal of concise
@@ -136,7 +134,7 @@ $\pi(s,1)=\overline{s}$. Here $\Sigma^*$ is the set of all DNA sequences.
 
 By convention, we call a $k$-long DNA sequence as a $k$-mer. We use the
 notation $s^k_i=a_i\cdots a_{i+k-1}$ to denote a $k$-long substring of $s$
-starting at $i$.
+starting at $i$. $\Sigma^k$ is the set of all $k$-mers.
 
 \subsection{Minimap}
 
@@ -159,7 +157,7 @@ merging are highly cache efficient.
 MHAP~\citep{Berlin:2015xy} differs from others in the use of MinHash
 sketch~\citep{Broder:1997aa}.  Briefly, given a read sequence $s$ and $m$
 $k$-mer hash functions $\{\phi_j\}_{1\le j\le m}$, MHAP computes
-$h_j=\min\{\phi_j(s_i^k):1\le i\le |s|-k+1\}$ with each hash function, and
+$h_j=\min\{\phi_j(s_i^k):1\le i\le |s|-k+1\}$ with each hash function $\phi_j$, and
 takes list $(h_j)_{1\le j\le m}$, which is called the \emph{sketch} of
 $s$, as a reduced representation of $s$. Suppose $(h_j)_j$ and $(h'_j)_j$ are
 the sketches of two reads, respectively. When the two reads are similar to each
@@ -251,9 +249,9 @@ $k$-mer $s=a_1\cdots a_k$, define
 $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
-It always maps a $k$-mer to a distinct integer with at most $2k$ bits. A problem with this function is
+This hash function always maps a $k$-mer to a distinct integer with at most $2k$ bits. A problem with this $\phi$ is
 that ploy-A, which is often highly enriched in genomes, always gets zero, the
-smallest value. The function may oversample these non-informative poly-A and
+smallest value. We may oversample these non-informative poly-A, which 
 hurts practical performance. To alleviate this issue, we use $\phi'=h\circ\phi$
 instead, where $h$ is an invertible integer hash function on $[0,4^k)$ as is
 implemented with Algorithm~2 (http://bit.ly/invihgi). The invertibility of $h$
@@ -288,6 +286,8 @@ minimizer of $s$ always corresponds to a minimizer of $\overline{s}$.
 \citet{Roberts:2004fv} did not discuss the treatment of such equally good
 minimizers.
 
+For read overlapping, we use $k=15$ and $w=5$ to find minimizers.
+
 \subsubsection{Indexing}
 
 \begin{algorithm}[tb]
@@ -310,7 +310,7 @@ minimizers.
 \caption{Index target sequences}
 \end{algorithm}
 
-Algorithm~3 describes target indexing. It keeps minimizers of all target
+Algorithm~3 describes indexing target sequences. It keeps minimizers of all target
 sequences in a hash table where the key is the minimizer hash and the value is
 a set of target sequence index, the position of the minimizer and the strand
 (packed into one 64-bit integer).
@@ -332,7 +332,7 @@ We say two minimizer hits $(h_1,x,i_1,i'_1)$ and $(h_2,x,i_2,i'_2)$ are
 \emph{$\epsilon$-away} if 1) $x=0$ and $|(i_1-i'_1)-(i_2-i'_2)|<\epsilon$
 or 2) $x=1$ and $|(i_1+i'_1)-(i_2+i'_2)|<\epsilon$. Intuitively,
 $\epsilon$-away hits are approximately colinear within a band of width
-$\epsilon$.  Given a set of minimizer hits $\{(h,x,i,i')\}$, we can cluster
+$\epsilon$ (500bp by default).  Given a set of minimizer hits $\{(h,x,i,i')\}$, we can cluster
 $i-i'$ for $x=0$ or $i+i'$ for $x=1$ to identify long colinear matches.
 This procedure is inspired by Hough Transformation mentioned
 by~\citet{sovic:2015aa}. 
@@ -376,15 +376,15 @@ colinear hits. Some hits in a cluster may not be colinear because two minimizer
 hits within distance $\epsilon$ are always $\epsilon$-away. To fix this issue,
 line~3 finds the maximal colinear subset of hits by solving a longest
 increasing sequencing problem. This subset is the final mapping result. In
-practical implementation, we set thresholds on the size of the subset and the
-number of matching bases in the subset to filter poor mappings.
+practical implementation, we set thresholds on the size of the subset (4 by default) and the
+number of matching bases in the subset to filter poor mappings (100 for read overlapping).
 
 \subsection{Assembly graph}
 
 Two strings $v$ and $w$ may be mapped to each other based on their sequence
 similarity. If $v$ can be mapped to a substring of $w$, we say $w$
 \emph{contains} $v$. If a suffix of $v$ and a prefix of $w$ can be mapped to
-each other, we say $v$ \emph{overlaps} $w$, or written as $v\to w$.
+each other, we say $v$ \emph{overlaps} $w$, written as $v\to w$.
 If we regard strings $v$ and $w$ as vertices, the overlap relationship defines
 a directed edge between them. The \emph{length} of $v\to w$ equals the length
 of $v$'s prefix that does not overlap $w$.
@@ -426,7 +426,6 @@ chimaera. The first step of assembly to reduce such artifacts by examining
 read-to-read mappings. For each read, miniasm finds the longest region that is
 covered by three or more good mappings (longer than 2000bp with at least 100bp
 non-redundant bases on matching minimizers) and trims bases outside the region.
-While trimming reads, miniasm also trims mappings.
 
 \subsubsection{Generating assembly graph}
 
@@ -447,8 +446,8 @@ $\ell(w\to\overline{v})=(l[2]-e[2])-(l[1]-e[1])$.}\label{fig:overhang}
 \DontPrintSemicolon
 \footnotesize
 \KwIn{Read length $l$, mapping begin coordinate $b$ and mapping end $e$ of the
-two reads; max overhang length $o$ and max overhang to mapping length ratio
-$r$}
+two reads; max overhang length $o$ (1000 by default) and max overhang to mapping length ratio
+$r$ (0.8 by default).}
 \KwOut{hashed $p$-bit integer}
 \BlankLine
 \textbf{Function} {\sc ClassifyMapping}$(l[2], b[2], e[2], o, r)$
@@ -527,7 +526,7 @@ assembly graph.
 
 After constructing the assembly graph, miniasm removes transitive
 edges~\citep{Myers:2005bh}, trims tips and pops small
-bubbles~\citep{Zerbino:2008uq}. Algorithm~6 detects bubbles. This algorithm is
+bubbles~\citep{Zerbino:2008uq}. Algorithm~6 detects bubbles. It is
 adapted from Kahn's topological sorting algorithm~\citep{Kahn62aa}. It starts
 from the potential source and visits a vertex when all its incoming edges are
 visited before. Algorithm~6 only detects bubbles. We can keep track of the
@@ -547,9 +546,9 @@ leads to missing overlaps and misassemblies.
 
 \subsubsection{Pairing mapping format (PAF)}
 
-\begin{table}[tb]\label{tab:paf}
+\begin{table}[tb]
 \processtable{Pairwise mapping format (PAF)}
-{\footnotesize
+{\footnotesize\label{tab:paf}
 \begin{tabular}{rcl}
 \toprule
 Col & Type & Description \\
@@ -576,7 +575,7 @@ available, column 10 and 11 can be approximate. PAF may optionally have
 additional fields in the SAM-like typed key-value format~\citep{Li:2009ys}.}
 \end{table}
 
-PAF is a lightweight format keeping the key mapping information (Table~2).
+PAF is a lightweight format keeping the key mapping information (Table~\ref{tab:paf}).
 Minimap outputs mappings in PAF, which are taken by miniasm as input for
 assembly. We also provide scripts to convert DALIGNER, MHAP and SAM formats to
 PAF.
@@ -585,7 +584,7 @@ PAF.
 
 \begin{table}[tb]
 \processtable{Graphical fragment assembly format (GFA)}
-{\footnotesize
+{\footnotesize\label{tab:gfa}
 \begin{tabular}{clp{5.8cm}}
 \toprule
 Line & Comment & Fixed fields \\
@@ -607,7 +606,7 @@ other line types starting with different letters. Each line may optionally have
 additional SAM-like typed key-value pairs.}
 \end{table}
 
-GFA is a concise assembly format (http://bit.ly/gfaspec) initially proposed by
+GFA (Table~\ref{tab:gfa}) is a concise assembly format (http://bit.ly/gfaspec) initially proposed by
 us prior to miniasm and later improved by community (P. Melsted, S.  Jackman,
 J. Simpson and E. Garrison, personal communication). GFA has an explicit
 relationship to an assembly graph -- an `S' line in the GFA corresponds to a
@@ -627,7 +626,7 @@ ways, which we regard as a limitation of FASTG.
 
 \begin{table}[tb]
 \processtable{Evaluation data sets}
-{\footnotesize
+{\footnotesize\label{tab:data}
 \begin{tabular}{llrrr}
 \toprule
 Name & Species & Size & Cov. & N50 \\
@@ -670,7 +669,7 @@ the FASTQ format.}
 \subsection{Assembling bacterial genomes}
 
 We evaluated the performance of miniasm on 17 bacterial data sets data sets
-(Table~4). We used command line `minimap -Sw5 -L100 -m0 reads.fa reads.fa $|$
+(Table~\ref{tab:data}). We used command line `minimap -Sw5 -L100 -m0 reads.fa reads.fa $|$
 miniasm -f reads.fa -'. Miniasm is able to derive a single contig per
 chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
 ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
@@ -714,7 +713,7 @@ three arrows indicate large-scale misassemblies visible from the
 plot. The mapping is done with `minimap -L500'.}\label{fig:ce}
 \end{figure}
 
-We assembled a 45-fold {\it C. elegans} data set (Table~4). With 16 CPU cores,
+We assembled a 45-fold {\it C. elegans} data set (Table~\ref{tab:data}). With 16 CPU cores,
 miniasm assembled the data in 9 minutes, achieving an N50 size 2.8Mb. From the
 dotter plot (Figure~\ref{fig:ce}), we observed three large-scale misassemblies
 (readers are advised to zoom into the vector graph to see the details).  Due to
