@@ -54,8 +54,7 @@ are longer than the read length and can hardly be resolved by short reads even
 with paired-end data~\citep{Alkan:2011zr}. Although with increased read length
 and improved algorithms we are now able to produce much better short-read
 assemblies than a few years ago, the contiguity and completeness of the
-assemblies are still not as good as the old Sanger
-assemblies~\citep{Chaisson:2015wj}.
+assemblies are still not as good as Sanger assemblies~\citep{Chaisson:2015wj}.
 
 The PacBio's SMRT technology were developed partly as an answer to the
 problem with short-read \emph{de novo} assembly. However, due to the high
@@ -68,7 +67,7 @@ genomes~\citep{Berlin:2015xy}.
 
 Oxford Nanopore Technologies (ONT) has recently offered another long-read
 sequencing technology. Although the per-base error rate was high at the
-early access stage~\citep{Quick:2014uf}, the latest data quality has been
+early access phase~\citep{Quick:2014uf}, the latest data quality has been
 greatly improved. \citet{Loman:2015xu} confirmed that we can achieve
 high-quality bacterial assembly with ONT data alone.
 
@@ -79,8 +78,8 @@ all-vs-all read mapping again, but as the error rate is much reduced at this
 step, it is easier and faster than stage (i). Table~\ref{tab:tools} shows the tools used for
 each stage. Notably, our tool minimap is a raw read overlapper and miniasm is
 an assembler. We do not correct sequencing errors, but instead directly produce
-unpolished contig sequences from overlaps between raw reads.  The idea of
-correction-free assembly was inspired by a series of talks given by Gene Myers.
+unpolished and uncorrected contig sequences from raw read overlaps. The idea of
+correction-free assembly was inspired by talks given by Gene Myers.
 Sikic et al (personal communication) are also independently exploring such an
 approach.
 
@@ -112,7 +111,7 @@ Consensus polish & Quiver & http://bit.ly/pbquiver \\
 
 As we can see from Table~\ref{tab:tools}, each stage can be achieved with multiple tools.
 Although we have successfully combined tools into different pipelines, we
-usually need to change or convert the input/output formats to make them work
+need to change or convert the input/output formats to make them work
 together. Another contribution of this article is the proposal of concise
 mapping and assembly formats, which will hopefully encourage modular design of
 assemblers and the associated tools.
@@ -132,7 +131,7 @@ For convenience, we define strand function
 $\pi:\Sigma^*\times\{0,1\}\to\Sigma^*$ such that $\pi(s,0)=s$ and
 $\pi(s,1)=\overline{s}$. Here $\Sigma^*$ is the set of all DNA sequences.
 
-By convention, we call a $k$-long DNA sequence as a $k$-mer. We use the
+By convention, we call a $k$-long DNA sequence as a \emph{$k$-mer}. We use the
 notation $s^k_i=a_i\cdots a_{i+k-1}$ to denote a $k$-long substring of $s$
 starting at $i$. $\Sigma^k$ is the set of all $k$-mers.
 
@@ -164,8 +163,8 @@ the sketches of two reads, respectively. When the two reads are similar to each
 other or have significant overlaps, there are likely to exist multiple $j$ such
 that $h_j=h'_j$. Potential matches can thus be identified. A limitation of
 MinHash sketch is that it always selects a fixed number of hash values
-regardless of the length of the sequences. This may waste space and is not
-suitable when input sequences vary greatly in lengths.
+regardless of the length of the sequences. This may waste space or hurt
+sensitivity when input sequences vary greatly in lengths.
 
 Minimap is heavily influenced by all these works. It adopts the idea of sketch
 like MHAP but takes minimizers \citep{Roberts:2004fv} as a reduced
@@ -173,27 +172,6 @@ representation instead; it stores $k$-mers in a hash table like BLAT and MHAP
 but also uses sorting extensively like DALIGNER. In addition, minimap is
 designed not only as a read overlapper but also as a read-to-genome and
 genome-to-genome mapper. It has more potential applications.
-
-%\subsubsection{Overview of the minimap algorithm}
-%
-%Loosely speaking, a $(w,k)$-minimizer \citep{Roberts:2004fv} of a string is the
-%smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. If
-%sequence $s'$ is a subsequence of $s$, the minimizers of $s'$ will be a subset
-%of the minimizers of $s$. If $s'$ and $s$ are close, the number of shared
-%colinear minimizers between them approximately measures their similarity. In
-%this sense, the set of minimizers of $s$ is a (possibly reduced) representation
-%of $s$. When we map a query sequence against a set of target sequences, we may
-%construct a hash table for all target minimizers and then look up for query
-%minimizers. Large clusters of colinear minimizer matches imply potential
-%mappings.
-
-%A similar and more popular concept is $(w,k)$-mer, which is used by many
-%aligners such as BLAT and SSAHA2. A $(w,k)$-mer of a string $s$ is a $k$-mer
-%starting at position $iw$, $i\le\lfloor(|s|-k+1)/w\rfloor$. If we construct a
-%hash table for all $(w,k)$-mers of target sequences, we need to look up for
-%every query $k$-mer, not just the $(w,k)$-mers of the query -- in contrast, if
-%we use minimizers, we only look up for query minimizers, not every $k$-mer.
-%Minimizer-based mapping tends to be more efficient.
 
 \subsubsection{Computing minimizers}
 
@@ -250,7 +228,7 @@ $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
 This hash function always maps a $k$-mer to a distinct integer with at most $2k$ bits. A problem with this $\phi$ is
-that ploy-A, which is often highly enriched in genomes, always gets zero, the
+that poly-A, which is often highly enriched in genomes, always gets zero, the
 smallest value. We may oversample these non-informative poly-A, which 
 hurts practical performance. To alleviate this issue, we use $\phi'=h\circ\phi$
 instead, where $h$ is an invertible integer hash function on $[0,4^k)$ as is
@@ -612,8 +590,8 @@ J. Simpson and E. Garrison, personal communication). GFA has an explicit
 relationship to an assembly graph -- an `S' line in the GFA corresponds to a
 vertex and its complement in the graph; an `L' line corresponds to an edge and
 its complement. GFA is able to represent graphs produced at all the stages of
-an assembly pipeline, from initial read overlaps before transitive reduction to
-the unitig relationship in the final assembly.
+an assembly pipeline, from initial read overlaps to the unitig relationship in
+the final assembly.
 
 FASTG (http://bit.ly/fastgfmt) is another assembly format prior to GFA.
 It uses different terminologies. A vertex in an assembly graph is called an
@@ -742,26 +720,26 @@ PB-ecoli at 160-fold. Minimap is faster on larger data sets possibly because
 without staging all possible hits in RAM, minimap is able to process more reads
 in a batch while a large batch usually helps performance. We should note that
 DALIGNER generates alignments while minimap does not. Minimap would possibly be
-slower if it included an alignment step. The performance of DALIGNER is very
+slower if it included an alignment step. In this regard, the performance of DALIGNER is very
 impressive.
 
 \section{Discussions}
 
-Miniasm confirms the speculation that long noisy reads can be assembled without
+Miniasm confirms that long noisy reads can be assembled without
 an error correction stage, and without this stage, the assembly process can be
 greatly accelerated and simplified, while achieving comparable contiguity and
 large-scale accuracy to existing pipelines, at least for genomes without
 excessive repetitive sequences. If we can develop a fast tool to generate
 high-quality contig sequences which miniasm currently lacks, we may be able to
-dramatically speed up the entire assembly pipeline. For MinION, which allows
-users to pause sequencing and reload samples, a fast assembly will not only
+dramatically speed up the entire assembly pipeline. MinION allows
+users to pause sequencing and reload samples. Fast assembly will not only
 alleviate the computational burden, but also help us to decide if enough data
 have been collected.
 
 Our main concern with miniasm is that when we look at a low-identity match
 between two noisy reads, it is difficult to tell whether the low identity is
-caused by the stochastically higher base error rate on reads, or by collapsing
-reads from two recent segmental duplications and repeats of similar sequences. 
+caused by the stochastically higher base error rate on reads, or because
+reads come from two recent segmental duplications and repeats of similar sequences. 
 In comparison, error correction takes the advantage of multiple reads and in
 theory has more power to distinguish high error rate from duplications/repeats.
 Bacteria and {\it C. elegans} evaluated in this article are repeat sparse.
@@ -773,7 +751,7 @@ hits before removing contained reads. Working with large complex genomes will
 be important to the future development of miniasm.
 
 Minimap is primarily used as a read overlapper in this article, but it has a
-wider range applications in addition to overlapping.  For example, with four
+wider range of applications in addition to overlapping.  For example, with four
 CPU cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5
 minutes, map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3
 minutes and to pre-indexed 100Gb nt database in an hour with a third of time
@@ -796,7 +774,7 @@ beneficial to the future development of long-read mappers and assemblers.
 
 \section*{Acknowledgement}
 
-We thank Pall Melsted for maintaining the GFA spec and are grateful to Gene
+We thank P\'all Melsted for maintaining the GFA spec and are grateful to Gene
 Myers, Jason Chin, Adam Phillippy, Jared Simpson, Zamin Iqbal, Nick Loman and
 Ivan Sovic for their presentations, talks, comments on social media and
 unpublished works which have greatly influenced and helped the development of
