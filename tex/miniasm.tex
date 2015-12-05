@@ -122,9 +122,9 @@ assemblers and the associated tools.
 \subsection{General notations}
 
 Let $\Sigma=\{\mathrm{A},\mathrm{C},\mathrm{G},\mathrm{T}\}$ be the
-alphabet of nucleotides. If symbol $a\in\Sigma$, $\overline{a}$ is the
-Watson-Crick complement of $a$. For a string $s=a_1a_2\cdots a_n$ over
-$\Sigma$, which is also called a \emph{DNA sequence}, its length is $|s|=n$;
+alphabet of nucleotides. For a symbol $a\in\Sigma$, $\overline{a}$ is the
+Watson-Crick complement of $a$. A string $s=a_1a_2\cdots a_n$ over
+$\Sigma$ is also called a \emph{DNA sequence}. Its length is $|s|=n$;
 its \emph{reverse complement} is $\overline{s}=\overline{a_1a_2\cdots
 a_n}=\overline{a}_n\overline{a}_{n-1}\cdots\overline{a}_1$.
 For convenience, we define strand function
@@ -208,7 +208,7 @@ genome-to-genome mapper. It has more potential applications.
 
 Loosely speaking, a $(w,k)$-minimizer of a string is the
 smallest $k$-mer in a surrounding window of $w$ consecutive $k$-mers. Formally,
-let $\phi:\Sigma^k\to\mathbb{Z}$ be a function that maps any $k$-mer to an integer.
+let $\phi:\Sigma^k\to\mathbb{Z}$ be a $k$-mer hash function.
 A \emph{double-strand $(w,k,\phi)$-minimizer}, or simply a \emph{minimizer}, of a
 string $s$, $|s|\ge w+k-1$, is a triple $(h,i,r)$ such that there exists
 $\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which renders
@@ -221,21 +221,21 @@ implementation is close to $O(|s|)$ in average case. It uses a queue to cache
 the previous minimals and avoids the loops at line~1 and~2 most of time. In
 practice, time spent on collecting minimizers is insignificant.
 
-A natural choice of $\phi$ is to let $\phi(\mathrm{A})=0$,
+A natural choice of hash function $\phi$ is to let $\phi(\mathrm{A})=0$,
 $\phi(\mathrm{C})=1$, $\phi(\mathrm{G})=2$ and $\phi(\mathrm{T})=3$ and for a
 $k$-mer $s=a_1\cdots a_k$, define
 $$
 \phi(s)=\phi(a_1)\times4^{k-1}+\phi(a_2)\times4^{k-2}+\cdots+\phi(a_k)
 $$
-This hash function always maps a $k$-mer to a distinct integer with at most $2k$ bits. A problem with this $\phi$ is
-that poly-A, which is often highly enriched in genomes, always gets zero, the
-smallest value. We may oversample these non-informative poly-A, which 
-hurts practical performance. To alleviate this issue, we use $\phi'=h\circ\phi$
-instead, where $h$ is an invertible integer hash function on $[0,4^k)$ as is
-implemented with Algorithm~2 (http://bit.ly/invihgi). The invertibility of $h$
-is not critical to the computation of minimizers, but as such $\phi'$ never
-maps two distinct $k$-mers to the same $2k$-bit integer, it helps to reduce
-hash collisions.
+This hash function always maps a $k$-mer to a distinct $2k$-bit integer. A
+problem with this $\phi$ is that poly-A, which is often highly enriched in
+genomes, always gets zero, the smallest value. We may oversample these
+non-informative poly-A and hurt practical performance. To alleviate this issue,
+we use function $\phi'=h\circ\phi$ instead, where $h$ is an invertible integer
+hash function on $[0,4^k)$ (Algorithm~2; http://bit.ly/invihgi). The
+invertibility of $h$ is not essential, but as such $\phi'$ never maps two
+distinct $k$-mers to the same $2k$-bit integer, it helps to reduce hash
+collisions.
 
 \begin{algorithm}[tb]
 \DontPrintSemicolon
@@ -352,10 +352,11 @@ collects minimizer hits between the query and all the target sequences. The
 loop at line~2 performs a single-linkage clustering to group approximately
 colinear hits. Some hits in a cluster may not be colinear because two minimizer
 hits within distance $\epsilon$ are always $\epsilon$-away. To fix this issue,
-line~3 finds the maximal colinear subset of hits by solving a longest
-increasing sequencing problem. This subset is the final mapping result. In
-practical implementation, we set thresholds on the size of the subset (4 by default) and the
-number of matching bases in the subset to filter poor mappings (100 for read overlapping).
+we find the maximal colinear subset of hits by solving a longest increasing
+sequencing problem (line~3). This subset is the final mapping result. In
+practical implementation, we set thresholds on the size of the subset (4 by
+default) and the number of matching bases in the subset to filter poor mappings
+(100 for read overlapping).
 
 \subsection{Assembly graph}
 
@@ -374,9 +375,9 @@ $\ell:E\to\Re_+$ is the edge length function. $G$ is said to be
 ii) $\forall v\to w\in E$, $\overline{w}\to\overline{v}\in E$. $G$ is said to
 be \emph{containment-free} if any sequence $v$ is not contained in other
 sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
-is an \emph{assembly graph}. In an assembly graph, vertices $v$ and
-$\overline{v}$ are \emph{complement} to each other; edges $v\to w$ and
-$\overline{w}\to\overline{v}$ are \emph{complement} to each other. Let
+is an \emph{assembly graph}. By definition, any vertex $v$ has a
+\emph{complement vertex} $\overline{v}$ in the graph and any edge $v\to w$ has
+a \emph{complement edge} $\overline{w}\to\overline{v}$.  Let
 $\mathrm{deg}^+(v)$ be the indegree of $v$ and $\mathrm{deg}^-(v)$ be the
 outdegree. It follows that $\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
 
@@ -605,7 +606,7 @@ other line types starting with different letters. Each line may optionally have
 additional SAM-like typed key-value pairs.}
 \end{table}
 
-GFA (Table~\ref{tab:gfa}) is a concise assembly format (http://bit.ly/gfaspec) initially proposed by
+GFA is a concise assembly format (Table~\ref{tab:gfa}; http://bit.ly/gfaspec) initially proposed by
 us prior to miniasm and later improved by community (P. Melsted, S.  Jackman,
 J. Simpson and E. Garrison, personal communication). GFA has an explicit
 relationship to an assembly graph -- an `S' line in the GFA corresponds to a
@@ -667,8 +668,8 @@ the FASTQ format.}
 
 \subsection{Assembling bacterial genomes}
 
-We evaluated the performance of miniasm on 17 bacterial data sets data sets
-(Table~\ref{tab:data}). We used command line `minimap -Sw5 -L100 -m0 reads.fa reads.fa $|$
+We evaluated the performance of miniasm on 17 bacterial data sets
+(Table~\ref{tab:data}) with command line `minimap -Sw5 -L100 -m0 reads.fa reads.fa $|$
 miniasm -f reads.fa -'. Miniasm is able to derive a single contig per
 chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
 ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
@@ -683,8 +684,8 @@ the shorter read lengths of the ERS* data sets made it more difficult to
 produce good assemblies at relatively low coverage.
 
 We have also run the PBcR pipeline~\citep{Berlin:2015xy}. PBcR requires a spec
-file. We took `pacbio.spec' and `oxford.spec' from PBcR-PB-ec and PBcR-ONT-ec,
-respectively, and applied them to all data sets based on their data types. MAP*
+file. We took `pacbio.spec' from the PBcR-PB-ec example and `oxford.spec' from
+PBcR-ONT-ec, and applied them to all data sets based on their data types. MAP*
 data sets only provide FASTA sequences for download. We assigned quality 9 to
 all bases as PBcR requires base quality. PBcR assembled all PacBio data sets
 without extra contigs longer than 50kb -- better than miniasm. However, on the
@@ -694,8 +695,8 @@ data set.
 
 With four CPU cores, it took miniasm 14 seconds to assemble the 30-fold
 PBcR-PB-ec data set and 2 minutes to assemble the 160-fold PB-ecoli data set.
-PBcR, with four CPU cores, too, is about 60 times slower on PB-ecoli and 700
-times slower on PBcR-PB-ec.  The performance is worse on low-coverage input
+PBcR, with four CPU cores, too, is about 700 times slower on PBcR-PB-ecoli and
+60 times slower on PB-ecoli.  It is slower on low-coverage data
 because PBcR automatically switches to the slower sensitive mode. Here we
 should remind readers that without an error correction stage, the contig
 sequences generated by miniasm are of much lower accuracy in comparison to
@@ -721,7 +722,7 @@ produce realible whole-genome alignment to analyze local misassemblies in a
 satisfactory manner.
 
 PacBio has assembled the same data set with HGAP3~\citep{Chin:2013qr}. HGAP3
-produces shorter contigs (N50 1.6Mb), but does not incur large-scale
+produces shorter contigs (N50=1.6Mb), but does not incur large-scale
 misassemblies visible from the dotter plot between the {\it C. elegans}
 reference genome and the contigs.
 
@@ -729,24 +730,23 @@ We have also tried PBcR on this data set. Based on the intermediate progress
 report, we estimated that with 16 CPU cores, it would take a week or so to
 finish the assembly in the automatically chosen `sensitive' mode.
 
-\subsection{Working with other overlappers}
+\subsection{Switching read overlappers}
 
-In addition to minimap, other overlappers may also work with miniasm as long as
-they output PAF or a format that can be converted to PAF.  On the 30-fold
-PBcR-PB-ec data set, we are able to produce a single contig with DALIGNER
-(option -k15 -h50), MHAP (option \mbox{--pacbio-sensitive}) and GraphMap
-(option -w owler). DALIGNER is the fastest, taking 65 seconds with four CPUs.
-Minimap is five times as fast on this data set and is 18 times as fast on
-PB-ecoli at 160-fold. Minimap is faster on larger data sets possibly because
-without staging all possible hits in RAM, minimap is able to process more reads
-in a batch while a large batch usually helps performance. We should note that
-DALIGNER generates alignments while minimap does not. Minimap would possibly be
-slower if it included an alignment step. In this regard, the performance of DALIGNER is very
-impressive.
+Miniasm also works with other overlappers when we convert their output format
+to PAF. On the 30-fold PBcR-PB-ec data set, we are able to produce a single
+contig with DALIGNER (option -k15 -h50), MHAP (option
+\mbox{--pacbio-sensitive}) and GraphMap (option -w owler). DALIGNER is the
+fastest, taking 65 seconds with four CPUs.  Minimap is five times as fast on
+this data set and is 18 times as fast on PB-ecoli at 160-fold. Minimap is
+faster on larger data sets possibly because without staging all possible hits
+in RAM, minimap is able to process more reads in a batch while a large batch
+usually helps performance. We should note that DALIGNER generates alignments
+while minimap does not. Minimap would possibly be slower if it included an
+alignment step. In this regard, the performance of DALIGNER is very impressive.
 
 \section{Discussions}
 
-Miniasm confirms that long noisy reads can be assembled without
+Miniasm confirms long noisy reads can be assembled without
 an error correction stage, and without this stage, the assembly process can be
 greatly accelerated and simplified, while achieving comparable contiguity and
 large-scale accuracy to existing pipelines, at least for genomes without
@@ -760,18 +760,18 @@ have been collected.
 Our main concern with miniasm is that when we look at a low-identity match
 between two noisy reads, it is difficult to tell whether the low identity is
 caused by the stochastically higher base error rate on reads, or because
-reads come from two recent segmental duplications and repeats of similar sequences. 
+reads come from two recent segmental duplications.
 In comparison, error correction takes the advantage of multiple reads and in
 theory has more power to distinguish high error rate from duplications/repeats.
 Bacteria and {\it C. elegans} evaluated in this article are repeat sparse.
-Miniasm might have issues with repeat-rich genomes.  In addition, miniasm has
+We are yet to know the performance of miniasm given repeat-rich genomes.  In addition, miniasm has
 not been optimized for large repeat-rich genomes. It reads all hits into RAM,
 which may not be practical when there are too many. We need to filter
 repetitive hits, introduce disk-based algorithms (e.g. for sorting) or stream
 hits before removing contained reads. Working with large complex genomes will
-be important to the future development of miniasm.
+be an important future direction.
 
-Minimap is primarily used as a read overlapper in this article, but it has a
+Minimap is primarily used as a read overlapper in this article. It in fact has a
 wider range of applications in addition to overlapping.  For example, with four
 CPU cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5
 minutes, map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3
