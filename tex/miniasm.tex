@@ -520,6 +520,27 @@ shorter overlaps after transitive reduction may be due to repeats.
 However, non-repetitive overlaps may also be removed at a small chance, which
 leads to missing overlaps and misassemblies.
 
+\subsubsection{Generating unitig sequences}
+
+If there are no multi-edges in the assembly graph, we can use $v_1\to
+v_2\to\cdots\to v_k$ to represent a path consisting of $k$ vertices. The
+sequence spelled from this path is the concatenation of vertex substrings:
+$v_1[1,\ell(v_1\to v_2)]\circ v_2[1,\ell(v_2\to v_3)]\circ\cdots\circ
+v_{k-1}[1,\ell(v_{k-1},v_k)]\circ v_k$, where $v[i,j]$ is the substring between
+$i$ and $j$ inclusive, and $\circ$ is the string concatenation operator.
+
+In a transitively reduced graph, a \emph{unitig} is a path $v_1\to
+v_2\to\cdots\to v_k$ such that ${\rm deg}^+(v_i)={\rm deg}^-(v_{i+1})=1$ and i)
+$v_1=v_k$ or ii) ${\rm deg}^-(v_1)\not=1$ and ${\rm deg}^-(v_k)\not=1$.
+Its sequence is the sequence spelled from the path. Intuitively, a unitig is a
+maximal path on which adjacent vertices can be ``unambiguously merged'' without
+affecting the connectivity of the original assembly graph.
+
+As miniasm does not correct sequencing errors, the error rate of unitig
+sequence is the same as the error rate of the raw input reads. It is in theory
+possible to derive a better unitig sequence by taking the advantage of read
+overlaps. We have not implemented such a consensus tool yet.
+
 \subsection{Formats: PAF and GFA}
 
 \subsubsection{Pairing mapping format (PAF)}
