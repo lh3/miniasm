@@ -203,7 +203,7 @@ genome-to-genome mapper. It has more potential applications.
 	}
 	\Return $M$\;
 }
-\caption{Compute minimizers}
+\caption{Compute minimizers}\label{alg:minimizer}
 \end{algorithm}
 
 Loosely speaking, a $(w,k)$-minimizer of a string is the
@@ -215,7 +215,7 @@ $\max(1,i-w+1)\le j\le\min(i,|s|-w-k+1)$ which renders
 $$
 h=\phi(\pi(s_i^k,r))=\min\big\{\phi(\pi(s_{j+p}^k,r')):0\le p<w,r'\in\{0,1\}\big\}
 $$
-Let $\mathcal{M}(s)$ be the set of minimizers of $s$.  Algorithm~1 gives the
+Let $\mathcal{M}(s)$ be the set of minimizers of $s$.  Algorithm~\ref{alg:minimizer} gives the
 pseudocode to compute $\mathcal{M}(s)$ in $O(w\cdot|s|)$ time.  Our actual
 implementation is close to $O(|s|)$ in average case. It uses a queue to cache
 the previous minimals and avoids the loops at line~1 and~2 most of time. In
@@ -232,7 +232,7 @@ problem with this $\phi$ is that poly-A, which is often highly enriched in
 genomes, always gets zero, the smallest value. We may oversample these
 non-informative poly-A and hurt practical performance. To alleviate this issue,
 we use function $\phi'=h\circ\phi$ instead, where $h$ is an invertible integer
-hash function on $[0,4^k)$ (Algorithm~2; http://bit.ly/invihgi). The
+hash function on $[0,4^k)$ (Algorithm~\ref{alg:invhash}; http://bit.ly/invihgi). The
 invertibility of $h$ is not essential, but as such $\phi'$ never maps two
 distinct $k$-mers to the same $2k$-bit integer, it helps to reduce hash
 collisions.
@@ -255,11 +255,11 @@ collisions.
 	$x\gets(x+(x\mbox{\tt\char60\char60}31))\mbox{ \tt\char38}\mbox{ }m$\;
 	\Return $x$\;
 }
-\caption{Invertible integer hash function}
+\caption{Invertible integer hash function}\label{alg:invhash}
 \end{algorithm}
 
 Note that in a window of $w$ consecutive $k$-mers, there may be more than one
-minimizers. Algorithm~1 keeps them all with the loop at line~2. This way, a
+minimizers. Algorithm~\ref{alg:minimizer} keeps them all with the loop at line~2. This way, a
 minimizer of $s$ always corresponds to a minimizer of $\overline{s}$.
 \citet{Roberts:2004fv} did not discuss the treatment of such equally good
 minimizers.
@@ -285,10 +285,10 @@ For read overlapping, we use $k=15$ and $w=5$ to find minimizers.
 	}
 	\Return $\mathcal{H}$\;
 }
-\caption{Index target sequences}
+\caption{Index target sequences}\label{alg:idx}
 \end{algorithm}
 
-Algorithm~3 describes indexing target sequences. It keeps minimizers of all target
+Algorithm~\ref{alg:idx} describes indexing target sequences. It keeps minimizers of all target
 sequences in a hash table where the key is the minimizer hash and the value is
 a set of target sequence index, the position of the minimizer and the strand
 (packed into one 64-bit integer).
@@ -344,10 +344,10 @@ by~\citet{sovic:2015aa}.
 		}
 	}
 }
-\caption{Map a query sequence}
+\caption{Map a query sequence}\label{alg:map}
 \end{algorithm}
 
-Algorithm~4 gives the details of the mapping algorithm. The loop at line~1
+Algorithm~\ref{alg:map} gives the details of the mapping algorithm. The loop at line~1
 collects minimizer hits between the query and all the target sequences. The
 loop at line~2 performs a single-linkage clustering to group approximately
 colinear hits. Some hits in a cluster may not be colinear because two minimizer
@@ -445,10 +445,10 @@ $r$ (0.8 by default).}
 		\Return {\tt SECOND\_TO\_FIRST\_OVERLAP}
 	}
 }
-\caption{Mapping classification}
+\caption{Mapping classification}\label{alg:ovlp}
 \end{algorithm}
 
-For each trimmed mapping, miniasm applies Algorithm~5 to classify the mapping
+For each trimmed mapping, miniasm applies Algorithm~\ref{alg:ovlp} to classify the mapping
 (see also Figure~\ref{fig:overhang} for the explanation of input variables).
 It ignores internal matches, drops contained reads and adds overlaps to the
 assembly graph.
@@ -500,12 +500,12 @@ assembly graph.
 	}
 	\Return {\bf nil}\;
 }
-\caption{Bubble detection}
+\caption{Bubble detection}\label{alg:popbub}
 \end{algorithm}
 
 After constructing the assembly graph, miniasm removes transitive
 edges~\citep{Myers:2005bh}, trims tips and pops small
-bubbles~\citep{Zerbino:2008uq}. Algorithm~6 detects bubbles. It is
+bubbles~\citep{Zerbino:2008uq}. Algorithm~\ref{alg:popbub} detects bubbles. It is
 adapted from Kahn's topological sorting algorithm~\citep{Kahn62aa}. It starts
 from the potential source and visits a vertex when all its incoming edges are
 visited before. Algorithm~6 only detects bubbles. We can keep track of the
