@@ -1,5 +1,5 @@
 CC=			gcc
-CFLAGS=		-g -Wall -O2 -Wc++-compat -Wno-unused-function
+CFLAGS=		-g -Wall -O2 -Wc++-compat
 CPPFLAGS=
 INCLUDES=	-I.
 OBJS=		sys.o sdict.o paf.o asg.o common.o hit.o asm.o

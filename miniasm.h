@@ -87,7 +87,6 @@ static inline int ma_hit2arc(const ma_hit_t *h, int ql, int tl, int max_hang, fl
 {
 	int32_t tl5, tl3, ext5, ext3, qs = (int32_t)h->qns;
 	uint32_t u, v, l; // u: query end; v: target end; l: length from u to v
-	u = v = l = UINT32_MAX;
 	if (h->rev) tl5 = tl - h->te, tl3 = h->ts; // tl5: 5'-end overhang (on the query strand); tl3: similar
 	else tl5 = h->ts, tl3 = tl - h->te;
 	ext5 = qs < tl5? qs : tl5;

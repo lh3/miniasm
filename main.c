@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "0.2-r128"
+#define MA_VERSION "0.2-r129-dirty"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
 	size_t n_hits;
-	float cov;
+	float cov = 40.0;
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] ===> Step 3: 2-pass (fine) read selection <===\n", __func__);
 		if (stage >= 4) {
 			ma_sub_t *sub2;
-			int min_dp = (int)(cov * opt.cov_ratio + .499) - 1;
+			int min_dp = (int)(cov * opt.cov_ratio + .499) - 1; // note that by default, opt.cov_ratio=0; cov is actually not used!
 			min_dp = min_dp > opt.min_dp? min_dp : opt.min_dp;
 			sub2 = ma_hit_sub(min_dp, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 			n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
