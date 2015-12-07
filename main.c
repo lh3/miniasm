@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "r104"
+#define MA_VERSION "0.2-r128"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		else if (c == 'p') outfmt = optarg;
 		else if (c == '1') no_first = 1;
 		else if (c == '2') no_second = 1;
-		else if (c == 'n') opt.n_rounds = atoi(optarg);
+		else if (c == 'n') opt.n_rounds = atoi(optarg) - 1;
 		else if (c == 'C') opt.cov_ratio = atof(optarg);
 		else if (c == 'B') bi_dir = 1;
 		else if (c == 'b') bi_dir = 0;
@@ -89,17 +89,18 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "    -d INT      max distance for bubble popping [%d]\n", opt.bub_dist);
 		fprintf(stderr, "    -e INT      small unitig threshold [%d]\n", opt.max_ext);
 		fprintf(stderr, "    -f FILE     read sequences []\n");
-		fprintf(stderr, "    -n INT      rounds of short overlap removal [%d]\n", opt.n_rounds);
+		fprintf(stderr, "    -n INT      rounds of short overlap removal [%d]\n", opt.n_rounds + 1);
 		fprintf(stderr, "    -r FLOAT[,FLOAT]\n");
 		fprintf(stderr, "                max and min overlap drop ratio [%.2g,%.2g]\n", opt.max_ovlp_drop_ratio, opt.min_ovlp_drop_ratio);
-		fprintf(stderr, "    -F FLOAT    aggressive overlap dro ratio in the end [%.2g]\n", opt.final_ovlp_drop_ratio);
+		fprintf(stderr, "    -F FLOAT    aggressive overlap drop ratio in the end [%.2g]\n", opt.final_ovlp_drop_ratio);
 		fprintf(stderr, "  Miscellaneous:\n");
 		fprintf(stderr, "    -p STR      output information: bed, paf, sg or ug [%s]\n", outfmt);
 //		fprintf(stderr, "    -B          only one direction of an arc is present in input PAF\n"); // deprecated; for backward compatibility
-		fprintf(stderr, "    -b          both directions of an arc are present in intput\n");
+		fprintf(stderr, "    -b          both directions of an arc are present in input\n");
 		fprintf(stderr, "    -1          skip 1-pass read selection\n");
 		fprintf(stderr, "    -2          skip 2-pass read selection\n");
 		fprintf(stderr, "    -V          print version number\n");
+		fprintf(stderr, "\nSee miniasm.1 for detailed description of the command-line options.\n");
 		return 1;
 	}
 

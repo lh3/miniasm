@@ -1,0 +1,239 @@
+.TH minimap 1 "06 December 2015" "miniasm-0.2" "Bioinformatics tools"
+
+.SH NAME
+.PP
+miniasm - de novo assembler for long read sequences
+
+.SH SYNOPSIS
+.PP
+miniasm
+.RB [ -b12V ]
+.RB [ -m
+.IR minMatch ]
+.RB [ -i
+.IR minIden ]
+.RB [ -s
+.IR minSpan ]
+.RB [ -c
+.IR minCov ]
+.RB [ -o
+.IR minOvlp ]
+.RB [ -h
+.IR maxHang ]
+.RB [ -I
+.IR intThres ]
+.RB [ -g
+.IR maxGapDiff ]
+.RB [ -d
+.IR maxBubDist ]
+.RB [ -e
+.IR minUtgSize ]
+.RB [ -f
+.IR readFile ]
+.RB [ -n
+.IR nRounds ]
+.RB [ -r
+.IR dropRatio ]
+.RB [ -F
+.IR finalDropRatio ]
+.RB [ -p
+.IR outputInfo ]
+.I mapping.paf
+>
+.I output.gfa
+
+.SH DESCRIPTION
+.PP
+Miniasm is a very fast OLC-based de novo assembler for noisy long reads. It
+takes all-vs-all read self-mappings in the PAF format as input and outputs an
+assembly graph in the GFA format. Different from mainstream assemblers, miniasm
+does not have a consensus step. It simply concatenates pieces of read sequences
+to generate the final unitig sequences. Thus the per-base error rate is similar
+to the raw input reads.
+
+.SH OPTIONS
+
+.SS Preselection options
+
+.TP 10
+.BI -m \ INT
+Drop mappings having less than
+.I INT
+matching bases (col10 in PAF) [100]. This option has the same role as
+.B -L
+of minimap.
+
+.TP
+.BI -s \ INT
+Drop mappings shorter than
+.IR INT -bp
+[1000]. This option also affects the second round of read filtering and minimal
+overlap length.
+
+.TP
+.BI -i \ FLOAT
+During read filtering, ignore mappings with col10/col11 below
+.I FLOAT
+[0.05]. Ignored mappings are still used for read overlaps.
+
+.TP
+.BI -c \ INT
+Minimal coverage by other reads [3]. In the first round of filtering, miniasm
+finds the longest region covered by
+.I INT
+or more reads. In the second round, it in addition requires each remaining base
+to be covered by
+.I INT
+bases at least
+.IR minSpan /2
+from the ends of other reads.
+
+.SS Overlapping options
+
+.TP 10
+.BI -o \ INT
+Minimal overlap length [same as
+.IR minSpan ]
+
+.TP
+.BI -h \ INT
+Maximum overhang length [1000]. An overhang is an unmapped region that should
+be mapped given a true overlap or true containment. If the overhang is too
+long, the mapping is considered an internal match and will be ignored.
+
+.TP
+.BI -I \ FLOAT
+Minimal ratio of mapping length to mapping+overhang length for a mapping
+considered a containment or an overlap [0.8]. This option has a similar role to
+.BR -h ,
+except that it controls the ratio, not length.
+
+.SS Graph layout options
+
+.TP 10
+.BI -g \ INT
+Maximal gap differences between two reads in a mapping [1000]. This parameter
+is only used for transitive reduction.
+
+.TP
+.BI -d \ INT
+Maximal probing distance for bubble popping [50000]. Bubbles longer than
+.I INT
+will not be popped.
+
+.TP
+.BI -e \ INT
+A unitig is considered small if it is composed of less than 
+.I INT
+reads [4]. Miniasm may try to remove small unitigs at various steps.
+
+.TP
+.BI -f \ FILE
+Read sequence file in FASTA or FASTQ format for generating unitig sequences
+[null]. If this option is absent, miniasm produces a GFA output without
+sequences.
+
+.TP
+.BI -r \ FLOAT1,[FLOAT2]
+Max and min overlap drop ratio [0.7,0.5]. Let overlap(v->w) be the overlap
+length of edge v->w and maxovlp(v)=max_w{overlap(v->w)} be the length of
+largest overlap. Miniasm drops overlap v->w if overlap(v->w)/maxovlp(v) is below
+a threshold controled by this option. Miniasm applies
+.I nRounds
+rounds of short overlap removal with an increasing threshold between
+.I FLOAT1
+and
+.IR FLOAT2 .
+
+.TP
+.BI -n \ INT
+Rounds of short overlap removal [3].
+
+.TP
+.BI -F \ FLOAT
+Overlap drop ratio threshold after short unitig removal [0.8]
+
+.SS Miscellaneous options
+
+.TP 10
+.B -b
+Indicate that in the input, the same mapping is likely to be given twice
+
+.TP
+.B -1
+Skip the first round of pre-assembly read selection
+
+.TP
+.B -2
+Skip the second round of pre-assembly read selection
+
+.TP
+.BI -p \ STR
+Output information and format [ug]. Possible
+.I STR
+values include -
+.BR bed :
+post-filtered read regions in the BED format;
+.BR paf :
+mappings between post-filtered reads;
+.BR sg :
+read overlap graph in the GFA format;
+.BR ug :
+unitig graph in the GFA format.
+
+.TP
+.B -V
+Print version number to stdout
+
+.SH INPUT FORMAT
+
+.PP
+Miniasm reads mapping positions in the Pairwise mApping Format (PAF), which is
+a TAB-delimited text format with each line consisting of at least 12 fields as
+are described in the following table:
+
+.TS
+center box;
+cb | cb | cb
+r | c | l .
+Col	Type	Description
+_
+1	string	Query sequence name
+2	int	Query sequence length
+3	int	Query start coordinate (0-based)
+4	int	Query end coordinate (0-based)
+5	char	`+' if query and target on the same strand; `-' if opposite
+6	string	Target sequence name
+7	int	Target sequence length
+8	int	Target start coordinate on the original strand
+9	int	Target end coordinate on the original strand
+10	int	Number of matching bases in the mapping
+11	int	Number bases, including gaps, in the mapping
+12	int	Mapping quality (0-255 with 255 for missing)
+.TE
+
+.PP
+Please see minimap(1) for the detailed description of each field.
+
+.SH OUTPUT FORMAT
+
+.PP
+Miniasm outputs the assembly in the Graphical Fragment Assembly format (GFA).
+It is a line based TAB-delimited format, with the leading letter indicates the
+type of the line. The following table gives the line types used by miniasm:
+
+.TS
+center box;
+cb | cb | cb
+c | l | l .
+Line	Comment	Fixed fields
+_
+H	Header	N/A
+S	Segment	segName segSeq
+L	Overlap	segName1 segOri1 segName2 segOri2 ovlpCIGAR
+a	Golden path	utgName utgStart readName:start-end readOri length
+.TE
+
+.SH SEE ALSO
+.PP
+minimap(1)
