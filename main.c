@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "0.2-r129-dirty"
+#define MA_VERSION "0.2-r131-dirty"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -32,8 +32,8 @@ static void print_hits(size_t n_hits, const ma_hit_t *hit, const sdict_t *d, con
 int main(int argc, char *argv[])
 {
 	ma_opt_t opt;
-	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 1, o_set = 0;
-	sdict_t *d;
+	int i, c, stage = 100, no_first = 0, no_second = 0, bi_dir = 1, o_set = 0, no_cont = 0;
+	sdict_t *d, *excl = 0;
 	ma_sub_t *sub = 0;
 	ma_hit_t *hit;
 	size_t n_hits;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBbF:")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBRbF:")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 		else if (c == 'C') opt.cov_ratio = atof(optarg);
 		else if (c == 'B') bi_dir = 1;
 		else if (c == 'b') bi_dir = 0;
+		else if (c == 'R') no_cont = 1;
 		else if (c == 'F') opt.final_ovlp_drop_ratio = atof(optarg);
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
@@ -76,6 +77,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage: miniasm [options] <in.paf>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Pre-selection:\n");
+		fprintf(stderr, "    -R          prefilter clearly contained reads (2-pass required)\n");
 		fprintf(stderr, "    -m INT      min match length [%d]\n", opt.min_match);
 		fprintf(stderr, "    -i FLOAT    min identity [%.2g]\n", opt.min_iden);
 		fprintf(stderr, "    -s INT      min span [%d]\n", opt.min_span);
@@ -107,8 +109,13 @@ int main(int argc, char *argv[])
 	sys_init();
 	d = sd_init();
 
+	if (no_cont) {
+		fprintf(stderr, "[M::%s] ===> Step 0: removing contained reads <===\n", __func__);
+		excl = ma_hit_no_cont(argv[optind], opt.min_span, opt.min_match, opt.max_hang, opt.int_frac);
+	}
+
 	fprintf(stderr, "[M::%s] ===> Step 1: reading read mappings <===\n", __func__);
-	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits, bi_dir);
+	hit = ma_hit_read(argv[optind], opt.min_span, opt.min_match, d, &n_hits, bi_dir, excl);
 
 	if (!no_first) {
 		fprintf(stderr, "[M::%s] ===> Step 2: 1-pass (crude) read selection <===\n", __func__);
@@ -192,6 +199,7 @@ int main(int argc, char *argv[])
 
 	free(sub); free(hit);
 	sd_destroy(d);
+	if (excl) sd_destroy(excl);
 
 	fprintf(stderr, "[M::%s] Version: %s\n", __func__, MA_VERSION);
 	fprintf(stderr, "[M::%s] CMD:", __func__);

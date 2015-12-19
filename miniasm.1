@@ -7,7 +7,7 @@ miniasm - de novo assembler for long read sequences
 .SH SYNOPSIS
 .PP
 miniasm
-.RB [ -b12V ]
+.RB [ -b12VR ]
 .RB [ -m
 .IR minMatch ]
 .RB [ -i
@@ -56,6 +56,21 @@ to the raw input reads.
 .SS Preselection options
 
 .TP 10
+.BI -R
+Pre-filter clearly contained short reads. In this mode,
+.I mapping.paf
+is read twice. The first pass identifies contained reads without loading hits
+to RAM; the second pass skips contained reads and load the rest into RAM. Due
+to the 2-pass behavior, the peak RAM is greatly reduced, but
+.I mapping.paf
+has to be a normal file, not a stream. When this option is in use, it is
+recommended to reduce
+.B -c
+to 2, as there are fewer reads after pre-filtering. Applying
+.BI -Rc 2
+sometimes improves assembly.
+
+.TP
 .BI -m \ INT
 Drop mappings having less than
 .I INT

@@ -33,7 +33,35 @@ void ma_hit_mark_unused(sdict_t *d, int n, const ma_hit_t *a)
 	}
 }
 
-ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n, int bi_dir)
+sdict_t *ma_hit_no_cont(const char *fn, int min_span, int min_match, int max_hang, float int_frac)
+{
+	paf_file_t *fp;
+	paf_rec_t r;
+	sdict_t *d;
+
+	fp = paf_open(fn);
+	d = sd_init();
+	while (paf_read(fp, &r) >= 0) {
+		int l5, l3;
+		if (r.qe - r.qs < min_span || r.te - r.ts < min_span || r.ml < min_match) continue;
+		l5 = r.rev? r.tl - r.te : r.ts;
+		l3 = r.rev? r.ts : r.tl - r.te;
+		if (r.ql>>1 > r.tl) {
+			if (l5 > max_hang>>2 || l3 > max_hang>>2 || r.te - r.ts < r.tl * int_frac) continue; // internal match
+			if ((int)r.qs - l5 > max_hang<<1 && (int)(r.ql - r.qe) - l3 > max_hang<<1)
+				sd_put(d, r.tn, r.tl);
+		} else if (r.ql < r.tl>>1) {
+			if (r.qs > max_hang>>2 || r.ql - r.qe > max_hang>>2 || r.qe - r.qs < r.ql * int_frac) continue; // internal
+			if (l5 - (int)r.qs > max_hang<<1 && l3 - (int)(r.ql - r.qe) > max_hang<<1)
+				sd_put(d, r.qn, r.ql);
+		}
+	}
+	paf_close(fp);
+	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] dropped %d contained reads\n", __func__, sys_timestamp(), d->n_seq);
+	return d;
+}
+
+ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, size_t *n, int bi_dir, const sdict_t *excl)
 {
 	paf_file_t *fp;
 	paf_rec_t r;
@@ -45,6 +73,7 @@ ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, s
 		ma_hit_t *p;
 		++tot;
 		if (r.qe - r.qs < min_span || r.te - r.ts < min_span || r.ml < min_match) continue;
+		if (excl && (sd_get(excl, r.qn) >= 0 || sd_get(excl, r.tn) >= 0)) continue;
 		kv_pushp(ma_hit_t, h, &p);
 		p->qns = (uint64_t)sd_put(d, r.qn, r.ql)<<32 | r.qs;
 		p->qe = r.qe;
