@@ -366,7 +366,7 @@ similarity. If $v$ can be mapped to a substring of $w$, we say $w$
 each other, we say $v$ \emph{overlaps} $w$, written as $v\to w$.
 If we regard strings $v$ and $w$ as vertices, the overlap relationship defines
 a directed edge between them. The \emph{length} of $v\to w$ equals the length
-of $v$'s prefix that does not overlap $w$.
+of $v$'s prefix that is not in the prefix-suffix match.
 
 Let $G=(V,E,\ell)$ be a graph without multi-edges, where $V$ is a
 set of DNA sequences (vertices), $E$ a set of overlaps between them (edges) and
@@ -411,14 +411,14 @@ non-redundant bases on matching minimizers) and trims bases outside the region.
 \begin{figure}[tb]
 \centering
 \includegraphics[width=.45\textwidth]{overhang}
-\caption{Mapping between two reads. $b[1]$ and $e[1]$ are the starting the
+\caption{Mapping between two reads. $b[1]$ and $e[1]$ are the 0-based starting and
 ending mapping coordinates of the first read $v$, respectively. $b[2]$ and
-$e[2]$, $b[2]<e[2]$, are the coordinates on the mapping strand of the second
-read $w$. Lightgray areas indicate regions that would be mapped together if the
-overlap was perfect. If the overhang regions are small enough, the figure
-implies an edge $v\to\overline{w}$ with $\ell(v\to\overline{w})=b[1]-b[2]$ and
-an edge $w\to\overline{v}$ with
-$\ell(w\to\overline{v})=(l[2]-e[2])-(l[1]-e[1])$.}\label{fig:overhang}
+$e[2]$ are the mapping coordinates of read $w$. Lightgray areas indicate
+overhang regions that should be mapped together if the overlap is real. If the
+overhang regions are small enough, the figure implies an edge $v\to w$ with
+approximate length $\ell(v\to w)=b[1]-b[2]$ and its complement edge
+$\overline{w}\to\overline{v}$ with
+$\ell(\overline{w}\to\overline{v})=(l[2]-e[2])-(l[1]-e[1])$.}\label{fig:overhang}
 \end{figure}
 
 \begin{algorithm}[bt]

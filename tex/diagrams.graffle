@@ -46,7 +46,7 @@
 	<key>Creator</key>
 	<string>Heng Li</string>
 	<key>DisplayScale</key>
-	<string>1 0/72 in = 1 0/72 in</string>
+	<string>1 0/72 in = 1.0000 in</string>
 	<key>GraphDocumentVersion</key>
 	<integer>8</integer>
 	<key>GraphicsList</key>
@@ -606,7 +606,7 @@
 					<key>LineType</key>
 					<integer>1</integer>
 					<key>TailArrow</key>
-					<string>FilledArrow</string>
+					<string>0</string>
 					<key>Width</key>
 					<real>3</real>
 				</dict>
@@ -627,7 +627,7 @@
 				<key>stroke</key>
 				<dict>
 					<key>HeadArrow</key>
-					<string>FilledArrow</string>
+					<string>0</string>
 					<key>Legacy</key>
 					<true/>
 					<key>LineType</key>
@@ -797,7 +797,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2015-11-16 16:18:50 +0000</string>
+	<string>2015-12-16 20:32:49 +0000</string>
 	<key>Modifier</key>
 	<string>Heng Li</string>
 	<key>NotesVisible</key>
