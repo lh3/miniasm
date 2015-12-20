@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
 			ma_sub_merge(d->n_seq, sub, sub2);
 			free(sub2);
 		}
+		ma_hit_chimeric(&opt, n_hits, hit, d, sub);
 		if (stage >= 5) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
 	}
 

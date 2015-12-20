@@ -13,6 +13,7 @@ typedef struct {
 	int min_span;
 	int min_match;
 	int min_dp;
+	int min_chimeric_clip;
 	float min_iden;
 	float cov_ratio;
 
@@ -66,6 +67,7 @@ ma_sub_t *ma_hit_sub(int min_dp, float min_iden, int end_clip, size_t n, const m
 size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a);
 size_t ma_hit_flt(const ma_sub_t *sub, int max_hang, int min_ovlp, size_t n, ma_hit_t *a, float *cov);
 void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b);
+size_t ma_hit_chimeric(const ma_opt_t *opt, size_t n, const ma_hit_t *a, const sdict_t *d, ma_sub_t *sub);
 size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n, ma_hit_t *a);
 
 asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, size_t n_hits, const ma_hit_t *hit);
