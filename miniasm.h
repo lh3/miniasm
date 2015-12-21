@@ -13,7 +13,6 @@ typedef struct {
 	int min_span;
 	int min_match;
 	int min_dp;
-	int min_chimeric_clip;
 	float min_iden;
 
 	int max_hang;
