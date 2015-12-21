@@ -265,7 +265,6 @@ size_t ma_hit_chimeric(const ma_opt_t *opt, size_t n, const ma_hit_t *a, const s
 			if (is_chimeric(opt, start, i, a, sub, c)) {
 				sub[a[start].qns>>32].del = 1;
 				++n_chi;
-				if (d) printf("c\t%s\n", d->seq[a[start].qns>>32].name);
 			}
 			start = i;
 		}
