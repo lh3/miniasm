@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "0.2-r131-dirty"
+#define MA_VERSION "0.2-r136-dirty"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:C:S:i:d:g:o:h:I:r:f:e:p:12VBRbF:")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:S:i:d:g:o:h:I:r:f:e:p:12VBRbF:")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
 		else if (c == '1') no_first = 1;
 		else if (c == '2') no_second = 1;
 		else if (c == 'n') opt.n_rounds = atoi(optarg) - 1;
-		else if (c == 'C') opt.cov_ratio = atof(optarg);
 		else if (c == 'B') bi_dir = 1;
 		else if (c == 'b') bi_dir = 0;
 		else if (c == 'R') no_cont = 1;
@@ -130,9 +129,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] ===> Step 3: 2-pass (fine) read selection <===\n", __func__);
 		if (stage >= 4) {
 			ma_sub_t *sub2;
-			int min_dp = (int)(cov * opt.cov_ratio + .499) - 1; // note that by default, opt.cov_ratio=0; cov is actually not used!
-			min_dp = min_dp > opt.min_dp? min_dp : opt.min_dp;
-			sub2 = ma_hit_sub(min_dp, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
+			sub2 = ma_hit_sub(opt.min_dp, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 			n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
 			ma_sub_merge(d->n_seq, sub, sub2);
 			free(sub2);

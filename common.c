@@ -9,7 +9,6 @@ void ma_opt_init(ma_opt_t *opt)
 	opt->min_dp = 3;
 	opt->min_chimeric_clip = 3;
 	opt->min_iden = .05;
-	opt->cov_ratio = 0.;
 
 	opt->max_hang = 1000;
 	opt->min_ovlp = opt->min_span;
