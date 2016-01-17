@@ -59,15 +59,8 @@ function pafmask(a, mask_level)
 	a.length = k;
 }
 
-function paftop(a, mask_level, max_gap)
+function pafmerge(a, max_gap)
 {
-	for (var i = 0; i < a.length; ++i) {
-		for (var j = 1; j <= 3; ++j) a[i][j] = parseInt(a[i][j]);
-		for (var j = 6; j <= 11; ++j) a[i][j] = parseInt(a[i][j]);
-	}
-	a.sort(function(x,y){return y[9]-x[9];});
-	pafmask(a, mask_level);
-	// merge hits
 	for (var i = 1; i < a.length; ++i) {
 		var ai = a[i];
 		for (var j = 0; j < i; ++j) {
@@ -88,9 +81,11 @@ function paftop(a, mask_level, max_gap)
 					te = [ai[6] - ai[7], aj[6] - aj[7]];
 				}
 			}
+			if (qe[0] > qe[1]) continue; // contained
+			if (ts[0] > ts[1]) continue;
 			var qg = qs[1] - qe[0], tg = ts[1] - te[0];
 			if ((qg < 0 && tg < 0) || Math.abs(tg - qg) < max_gap) {
-//				print("Merged: ["+ai[2]+","+ai[3]+") <=> ["+aj[2]+","+aj[3]+") "+ai[4]+" ["+ai[7]+","+ai[8]+") <=> ["+aj[7]+","+aj[8]+")");
+				//print("Merged: ["+ai[2]+","+ai[3]+") <=> ["+aj[2]+","+aj[3]+") "+ai[4]+" ["+ai[7]+","+ai[8]+") <=> ["+aj[7]+","+aj[8]+")");
 				aj[2] = qs[0], aj[3] = qe[1];
 				if (aj[4] == '+') {
 					aj[7] = ts[0], aj[8] = te[1];
@@ -108,6 +103,17 @@ function paftop(a, mask_level, max_gap)
 	for (var i = 0; i < a.length; ++i)
 		if (a[i].length != 0) a[k++] = a[i];
 	a.length = k;
+}
+
+function paftop(a, mask_level, max_gap)
+{
+	for (var i = 0; i < a.length; ++i) {
+		for (var j = 1; j <= 3; ++j) a[i][j] = parseInt(a[i][j]);
+		for (var j = 6; j <= 11; ++j) a[i][j] = parseInt(a[i][j]);
+	}
+	a.sort(function(x,y){return y[9]-x[9];});
+	pafmask(a, mask_level);
+	pafmerge(a, max_gap);
 	pafmask(a, mask_level);
 	for (var i = 0; i < a.length; ++i)
 		if (a[i].length) print(a[i].join("\t"));
