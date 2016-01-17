@@ -58,17 +58,20 @@ while (1) {
 		break;
 	}
 	if (sb[0].length == 1) {
-		var j, end = sm[0].length;
+		var end = sm[0].length, hit = 0;
 		++tot;
-		for (j = 0; j < end; ++j) {
+		for (var j = 0; j < end; ++j) {
 			if (sb[0][0][4] != sm[0][j][4] || sb[0][0][5] != sm[0][j][5]) continue;
 			if (sb[0][0][8] > sm[0][j][7] && sm[0][j][8] > sb[0][0][7]) {
-				++matched;
+				var ol, ml;
+				ol = sb[0][0][8] - sm[0][j][7];
+				ml = sm[0][j][8] - sb[0][0][7];
+				var r = ol < ml? ol / ml : ml / ol;
+				if (r >= .3333) ++matched, hit = 1;
 				break;
 			}
 		}
-		if (j == sm[0].length)
-			print(sb[0][0].join("\t"));
+		if (hit == 0) print(sb[0][0].join("\t"));
 	}
 	sb = read1(fb, buf, sb[1]);
 	sm = read1(fm, buf, sm[1]);
