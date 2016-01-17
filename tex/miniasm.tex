@@ -32,7 +32,8 @@ assembler, miniasm, for efficiently mapping and assembling SMRT and ONT reads
 without an error correction stage. They can often assemble a sequencing run of
 bacterial data into a single contig in a few minutes, and assemble 45-fold
 \emph{C. elegans} data in 9 minutes, orders of magnitude faster than the
-existing pipelines. We also introduce a pairwise read mapping format (PAF) and
+existing pipelines, though the consensus sequence error rate is as high as raw
+reads. We also introduce a pairwise read mapping format (PAF) and
 a graphical fragment assembly format (GFA), and demonstrate the
 interoperability between ours and current tools.
 
@@ -261,8 +262,6 @@ collisions.
 Note that in a window of $w$ consecutive $k$-mers, there may be more than one
 minimizers. Algorithm~\ref{alg:minimizer} keeps them all with the loop at line~2. This way, a
 minimizer of $s$ always corresponds to a minimizer of $\overline{s}$.
-\citet{Roberts:2004fv} did not discuss the treatment of such equally good
-minimizers.
 
 For read overlapping, we use $k=15$ and $w=5$ to find minimizers.
 
@@ -321,7 +320,7 @@ by~\citet{sovic:2015aa}.
 \KwIn{Hash table $\mathcal{H}$ and query sequence $q$}
 \KwOut{Print matching query and target intervals}
 \BlankLine
-\textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,g)$
+\textbf{Function} {\sc Map}$(\mathcal{H},q,w,k,\epsilon)$
 \Begin {
 	$\mathcal{A}\gets$ empty array\;
 	$\mathcal{M}\gets${\sc MinimizerSketch}$(q,w,k)$\;
@@ -337,7 +336,7 @@ by~\citet{sovic:2015aa}.
 	Sort $\mathcal{A}=[(t,r,c,i')]$ in the order of the four values in tuples\;
 	$b\gets1$\;
 	\nl\For (\Comment*[f]{Cluster minimizer hits}) {$e=1$ \KwTo $|\mathcal{A}|$} {
-		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].t\not=\mathcal{A}[e].t$ {\bf or} $\mathcal{A}[e+1].r\not=\mathcal{A}[e].r$ {\bf or} $\mathcal{A}[e+1].c-\mathcal{A}[e].c>g$} {
+		\If{$e=|\mathcal{A}|$ {\bf or} $\mathcal{A}[e+1].t\not=\mathcal{A}[e].t$ {\bf or} $\mathcal{A}[e+1].r\not=\mathcal{A}[e].r$ {\bf or} $\mathcal{A}[e+1].c-\mathcal{A}[e].c\ge\epsilon$} {
 			\nl$\mathcal{C}\gets$ the maximal colinear subset of $\mathcal{A}[b..e]$\;
 			Print the left- and right-most query/target positions in $\mathcal{C}$\;
 			$b\gets e+1$\;
@@ -378,8 +377,8 @@ sequences in $V$. If $G$ is both Watson-Crick complete and containment-free, it
 is an \emph{assembly graph}. By definition, any vertex $v$ has a
 \emph{complement vertex} $\overline{v}$ in the graph and any edge $v\to w$ has
 a \emph{complement edge} $\overline{w}\to\overline{v}$.  Let
-$\mathrm{deg}^+(v)$ be the indegree of $v$ and $\mathrm{deg}^-(v)$ be the
-outdegree. It follows that $\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
+$\mathrm{deg}^+(v)$ be the outdegree of $v$ and $\mathrm{deg}^-(v)$ be the
+indegree. It follows that $\mathrm{deg}^-(v)=\mathrm{deg}^+(\overline{v})$.
 
 An assembly graph has the same topology as a string graph~\citep{Myers:2005bh},
 though the interpretation of the vertex set $V$ is different. In a string
@@ -392,9 +391,10 @@ $v\to u$ and $u\to w$. Removing a transitive edge does not affect the
 connectivity of the graph. A vertex $v$ is a \emph{tip} if ${\rm deg}^+(v)=0$
 and ${\rm deg}^-(v)>0$. The majority of tips are caused by artifacts or missing
 overlaps. A \emph{bubble} is a directed acyclic subgraph with a single source
-$v$ and a single sink $w$ having at least two paths between $v$ and $w$. The
+$v$ and a single sink $w$ having at least two paths between $v$ and $w$, and without connecting the rest of the graph. The
 bubble is tight if ${\rm deg}^+(v)>1$ and ${\rm deg}^-(w)>1$. A bubble may be
-caused by variants between homologous haplotypes as well as missing overlaps.
+caused by missing overlaps or by variants between haplotypes in multi-ploidy samples or paralogs.
+It is preferred to collapse bubbles for high contiguity, though this introduces loss of information.
 
 \subsection{Miniasm}
 
@@ -402,9 +402,11 @@ caused by variants between homologous haplotypes as well as missing overlaps.
 
 Raw read sequences may contain artifacts such as untrimmed adapters and
 chimaera. The first step of assembly to reduce such artifacts by examining
-read-to-read mappings. For each read, miniasm finds the longest region that is
-covered by three or more good mappings (longer than 2000bp with at least 100bp
-non-redundant bases on matching minimizers) and trims bases outside the region.
+read-to-read mappings. For each read, miniasm computes per-base coverage based
+on good mappings against other reads (longer than 2000bp with at least
+100bp non-redundant bases on matching minimizers). It then identifies the
+longest region having coverage three or more, and trims bases outside this
+region.
 
 \subsubsection{Generating assembly graph}
 
@@ -504,8 +506,8 @@ assembly graph.
 \end{algorithm}
 
 After constructing the assembly graph, miniasm removes transitive
-edges~\citep{Myers:2005bh}, trims tips and pops small
-bubbles~\citep{Zerbino:2008uq}. Algorithm~\ref{alg:popbub} detects bubbles. It is
+edges~\citep{Myers:2005bh}, trims tips composed on few reads and pops small
+bubbles~\citep{Zerbino:2008uq}. Algorithm~\ref{alg:popbub} detects bubbles where the longest path is shorter than $d$ (50kb by default). It is
 adapted from Kahn's topological sorting algorithm~\citep{Kahn62aa}. It starts
 from the potential source and visits a vertex when all its incoming edges are
 visited before. Algorithm~6 only detects bubbles. We can keep track of the
@@ -530,7 +532,7 @@ $v_1[1,\ell(v_1\to v_2)]\circ v_2[1,\ell(v_2\to v_3)]\circ\cdots\circ
 v_{k-1}[1,\ell(v_{k-1},v_k)]\circ v_k$, where $v[i,j]$ is the substring between
 $i$ and $j$ inclusive, and $\circ$ is the string concatenation operator.
 
-In a transitively reduced graph, a \emph{unitig} is a path $v_1\to
+In a transitively reduced graph, a \emph{unitig}~\citep{Myers:2000kl} is a path $v_1\to
 v_2\to\cdots\to v_k$ such that ${\rm deg}^+(v_i)={\rm deg}^-(v_{i+1})=1$ and i)
 $v_1=v_k$ or ii) ${\rm deg}^-(v_1)\not=1$ and ${\rm deg}^-(v_k)\not=1$.
 Its sequence is the sequence spelled from the path. Intuitively, a unitig is a
@@ -555,8 +557,8 @@ Col & Type & Description \\
 \midrule
 1 & string & Query sequence name \\
 2 & int    & Query sequence length \\
-3 & int    & Query start coordinate (0-based) \\
-4 & int    & Query end coordinate (0-based) \\
+3 & int    & Query start coordinate (BED-like) \\
+4 & int    & Query end coordinate (BED-like) \\
 5 & char   & `+' if query and target on the same strand; `-' if opposite \\
 6 & string & Target sequence name \\
 7 & int    & Target sequence length \\
@@ -673,7 +675,8 @@ We evaluated the performance of miniasm on 17 bacterial data sets
 miniasm -f reads.fa -'. Miniasm is able to derive a single contig per
 chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
 ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
-each. 
+each. In the dotter plot between the assembly and the reference genome (similar
+to Figure~\ref{fig:ce}), no large-scale misassemblies are observed.
 
 Encouraged by the single-contig assembly for PBcR-PB-ec at only 30-fold
 coverage, we randomly down-sampled PacBio data sets and tried to assemble the
