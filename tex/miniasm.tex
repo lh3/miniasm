@@ -668,6 +668,29 @@ the FASTQ format.}
 
 \section{Results}
 
+\subsection{The sensitivity of minimap}
+
+We mapped a human PacBio run ``m130928\_232712\_42213\_*.1.*''
+(http://bit.ly/chm1p5c3) with minimap and BWA-MEM~\citep{Li:2013aa}
+against GRCh37 plus decoy sequences (http://bit.ly/GRCh37d5).
+We focused on reads that have one non-chimeric BWA-MEM alignment longer than
+2kb and with mapping quality $\ge$10. We found only 2.0\% of such reads not
+overlapping the best minimap mapping of the same read. The majority of them hit
+to the decoy sequence which is challenging to BWA-MEM. If we exclude hits to
+the decoy, the percentage drops to 0.7\%. On this input, minimap is 50 times
+faster than BWA-MEM, while finding similar best mapping positions.
+
+To test the sensitivity for read overlapping, we aligned all reads from
+PBcR-PB-ec (Table~\ref{tab:data}) against the reference genome with BWA-MEM,
+extracted reads with mapping quality $\ge$10, and identified $\ge$2kb overlaps
+between the extracted reads based on their positions on the reference genom.
+Minimap finds 93\% of these overlaps. It is more sensitive than MHAP in its
+sensitive mode (78\%) but less than DALIGNER (98\%).
+
+If we assume the average error rate of PacBio reads is 10--15\%, the two
+experiments imply that minimap has a sensitivity 99\% to $\ge$2kb hits at
+10--15\% sequence divergence and a sensitivity 93\% at 20--30\% divergence.
+
 \subsection{Assembling bacterial genomes}
 
 We evaluated the performance of miniasm on 17 bacterial data sets
@@ -744,8 +767,8 @@ this data set and is 18 times as fast on PB-ecoli at 160-fold. Minimap is
 faster on larger data sets possibly because without staging all possible hits
 in RAM, minimap is able to process more reads in a batch while a large batch
 usually helps performance. We should note that DALIGNER generates alignments
-while minimap does not. Minimap would possibly be slower if it included an
-alignment step. In this regard, the performance of DALIGNER is very impressive.
+while minimap does not. Minimap would probably have a similar performance if it
+included an alignment step.
 
 \section{Discussions}
 
@@ -774,16 +797,16 @@ repetitive hits, introduce disk-based algorithms (e.g. for sorting) or stream
 hits before removing contained reads. Working with large complex genomes will
 be an important future direction.
 
-Minimap is primarily used as a read overlapper in this article. It in fact has a
-wider range of applications in addition to overlapping.  For example, with four
-CPU cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5
-minutes, map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3
-minutes and to pre-indexed 100Gb nt database in an hour with a third of time
-spent on loading the index from the network file system. It can also map 2800
-bacterial genomes to themselves in an hour. Minimap is fast, but is not as
-sensitive as proper whole-genome aligners and recent long-read aligners such as
-LASTZ~\citep{harris:2007aa}, LAST~\citep{Kiebasa:2011aa} and GraphMap. They use
-shorter spaced seeds which greatly help sensitivity at the cost of performance.
+%Minimap is primarily used as a read overlapper in this article. It in fact has a
+%wider range of applications in addition to overlapping.  For example, with four
+%CPU cores, it is able to map 1.6Gb PacBio reads to the human genome in 2.5
+%minutes, map 1Gb {\it E. coli} reads to pre-indexed 9.6Gb bacterial genome in 3
+%minutes and to pre-indexed 100Gb nt database in an hour with a third of time
+%spent on loading the index from the network file system. It can also map 2800
+%bacterial genomes to themselves in an hour. Minimap is fast, but is not as
+%sensitive as proper whole-genome aligners and recent long-read aligners such as
+%LASTZ~\citep{harris:2007aa}, LAST~\citep{Kiebasa:2011aa} and GraphMap. They use
+%shorter spaced seeds which greatly help sensitivity at the cost of performance.
 
 Oxford Nanopore is working on PromethIon and PacBio will deliver PacBio Sequel
 next year. Both sequencers promise significantly reduced sequencing cost and
