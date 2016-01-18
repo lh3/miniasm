@@ -668,7 +668,7 @@ the FASTQ format.}
 
 \section{Results}
 
-\subsection{The sensitivity of minimap}
+\subsection{The accuracy of minimap}
 
 We mapped a human PacBio run ``m130928\_232712\_42213\_*.1.*''
 (http://bit.ly/chm1p5c3) with minimap and BWA-MEM~\citep{Li:2013aa}
@@ -679,6 +679,10 @@ overlapping the best minimap mapping of the same read. The majority of them hit
 to the decoy sequence which is challenging to BWA-MEM. If we exclude hits to
 the decoy, the percentage drops to 0.7\%. On this input, minimap is 50 times
 faster than BWA-MEM, while finding similar best mapping positions.
+This experiment evaluates both the sensitivity and the specificity of minimap:
+if minimap had low sensitivity, it would miss the BWA-MEM mapping completely;
+if minimap had low specificity, its best mapping would often be a wrong
+mapping.
 
 To test the sensitivity for read overlapping, we aligned all reads from
 PBcR-PB-ec (Table~\ref{tab:data}) against the reference genome with BWA-MEM,
@@ -686,10 +690,6 @@ extracted reads with mapping quality $\ge$10, and identified $\ge$2kb overlaps
 between the extracted reads based on their positions on the reference genom.
 Minimap finds 93\% of these overlaps. It is more sensitive than MHAP in its
 sensitive mode (78\%) but less than DALIGNER (98\%).
-
-If we assume the average error rate of PacBio reads is 10--15\%, the two
-experiments imply that minimap has a sensitivity 99\% to $\ge$2kb hits at
-10--15\% sequence divergence and a sensitivity 93\% at 20--30\% divergence.
 
 \subsection{Assembling bacterial genomes}
 
@@ -716,8 +716,7 @@ data sets only provide FASTA sequences for download. We assigned quality 9 to
 all bases as PBcR requires base quality. PBcR assembled all PacBio data sets
 without extra contigs longer than 50kb -- better than miniasm. However, on the
 ONT data sets, PBcR produced more fragmented assemblies for MAP-006-2,
-MAP-006-pcr-1 and MAP-006-pcr-2, and deleted a 300kb region for the PBcR-ONT-ec
-data set. 
+MAP-006-pcr-1 and MAP-006-pcr-2; the PBcR-ONT-ec assembly is 300kb shorter.
 
 With four CPU cores, it took miniasm 14 seconds to assemble the 30-fold
 PBcR-PB-ec data set and 2 minutes to assemble the 160-fold PB-ecoli data set.
@@ -755,6 +754,11 @@ reference genome and the contigs.
 We have also tried PBcR on this data set. Based on the intermediate progress
 report, we estimated that with 16 CPU cores, it would take a week or so to
 finish the assembly in the automatically chosen `sensitive' mode.
+
+For this data set, minimap takes 27GB RAM at the peak. As minimap loads at most
+4Gbp bases to index, it will not use more RAM given more data set. The memory
+used by miniasm is proportional to the number of overlaps.  Although it only
+takes 1.3GB RAM here, it will become the limiting factor for larger data sets.
 
 \subsection{Switching read overlappers}
 
