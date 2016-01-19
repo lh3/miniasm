@@ -624,6 +624,19 @@ nested, though no tools work with nested graphs due to technical complications.
 In addition, with nesting, one assembly graph can be represented in distinct
 ways, which we regard as a limitation of FASTG.
 
+\subsection{Evaluating the layout accuracy}\label{sec:eval}
+
+Miniasm outputs the approximate positions of trimmed reads on the resulting
+unitigs. We extract these reads, map to the true assembly with minimap (option:
+`-L100 -m0 -w5') and select the best mapping for each read. For a read $i$, let
+${\rm utg}_i$ be the unitig name and ${\rm rank}_i$ be its index on ${\rm
+utg}_i$ (i.e. read $i$ is the ${\rm rank}_i$-th read on the unitig).  If two
+reads $i$ and $j$ are mapped adjacently on the true assembly, we say the
+adjacency is $w$-consistent, if (i) ${\rm utg}_i={\rm utg}_j$ and $|{\rm
+rank}_i-{\rm rank}_j|<w$, or (ii) both read $i$ and $j$ are the first or the
+last $w$ reads of some unitigs. We use $w=5$ to detect large structural
+misassemblies.
+
 \end{methods}
 
 \begin{table}[tb]
@@ -699,15 +712,20 @@ miniasm -f reads.fa -'. Miniasm is able to derive a single contig per
 chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
 ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
 each. In the dotter plot between the assembly and the reference genome (similar
-to Figure~\ref{fig:ce}), no large-scale misassemblies are observed.
+to Figure~\ref{fig:ce}), no large-scale misassemblies are observed.  We also
+applied the method in Section~\ref{sec:eval}. Except ERS473430, the miniasm is
+consistent with the reference assemblies. For ERS473430, the NCTC project page
+claimed the sample has a plasmid. Miniasm gives two contigs, but the NCTC
+assembly has one contig only. The difference in layout may be an error in the
+NCTC assembly.
 
-Encouraged by the single-contig assembly for PBcR-PB-ec at only 30-fold
-coverage, we randomly down-sampled PacBio data sets and tried to assemble the
-subset. For PB-ecoli, miniasm still produced a single contig at 24-fold
-coverage, or two contigs at 20-fold. For the other data sets, however, miniasm
-generated fragmented assemblies when we sampled a third of reads. We speculate
-the shorter read lengths of the ERS* data sets made it more difficult to
-produce good assemblies at relatively low coverage.
+%Encouraged by the single-contig assembly for PBcR-PB-ec at only 30-fold
+%coverage, we randomly down-sampled PacBio data sets and tried to assemble the
+%subset. For PB-ecoli, miniasm still produced a single contig at 24-fold
+%coverage, or two contigs at 20-fold. For the other data sets, however, miniasm
+%generated fragmented assemblies when we sampled a third of reads. We speculate
+%the shorter read lengths of the ERS* data sets made it more difficult to
+%produce good assemblies at relatively low coverage.
 
 We have also run the PBcR pipeline~\citep{Berlin:2015xy}. PBcR requires a spec
 file. We took `pacbio.spec' from the PBcR-PB-ec example and `oxford.spec' from
@@ -740,25 +758,28 @@ plot. The mapping is done with `minimap -L500'.}\label{fig:ce}
 
 We assembled a 45-fold {\it C. elegans} data set (Table~\ref{tab:data}). With 16 CPU cores,
 miniasm assembled the data in 9 minutes, achieving an N50 size 2.8Mb. From the
-dotter plot (Figure~\ref{fig:ce}), we observed three large-scale misassemblies
-(readers are advised to zoom into the vector graph to see the details).  Due to
-the high per-base error rate of the miniasm contigs, we have not been able to
-produce realible whole-genome alignment to analyze local misassemblies in a
-satisfactory manner.
-
+dotter plot (Figure~\ref{fig:ce}), we observed three structural misassemblies
+(readers are advised to zoom into the vector graph to see the details).
 PacBio has assembled the same data set with HGAP3~\citep{Chin:2013qr}. HGAP3
 produces shorter contigs (N50=1.6Mb), but does not incur large-scale
 misassemblies visible from the dotter plot between the {\it C. elegans}
 reference genome and the contigs.
 
+When we take the {\it C. elegans} reference genome as the truth, the method in
+Section~\ref{sec:eval} also identifies the three structural misassemblies. The
+method additionally finds eight intra-unitig and one inter-unitig
+inconsistencies. In all cases, miniasm agrees with HGAP3, suggesting these
+inconsistencies may be true structural variations between the reference strain
+and the sequenced strain.
+
 We have also tried PBcR on this data set. Based on the intermediate progress
 report, we estimated that with 16 CPU cores, it would take a week or so to
 finish the assembly in the automatically chosen `sensitive' mode.
 
-For this data set, minimap takes 27GB RAM at the peak. As minimap loads at most
-4Gbp bases to index, it will not use more RAM given more data set. The memory
-used by miniasm is proportional to the number of overlaps.  Although it only
-takes 1.3GB RAM here, it will become the limiting factor for larger data sets.
+For this data set, minimap takes 27GB RAM at the peak. As minimap loads 4Gbp
+bases to index, the peak RAM will be capped around 27GB. The memory used by
+miniasm is proportional to the number of overlaps.  Although it only takes
+1.3GB RAM here, it will become the limiting factor for larger data sets.
 
 \subsection{Switching read overlappers}
 
