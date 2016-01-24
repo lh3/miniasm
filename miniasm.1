@@ -1,4 +1,4 @@
-.TH miniasm 1 "06 December 2015" "miniasm-0.2" "Bioinformatics tools"
+.TH miniasm 1 "24 January 2016" "miniasm-0.2+dirty" "Bioinformatics tools"
 
 .SH NAME
 .PP
@@ -246,8 +246,19 @@ _
 H	Header	N/A
 S	Segment	segName segSeq
 L	Overlap	segName1 segOri1 segName2 segOri2 ovlpCIGAR
-a	Golden path	utgName utgStart readName:start-end readOri length
+a	Golden path	utgName utgStart readName:rStart-rEnd readOri incLen
 .TE
+
+.PP
+An `a' line indicates that the unitig subsequence in
+.RI [ utgStart , utgStart + incLen )
+is taken from read
+.I readName
+in region
+.RI [ rStart -1, rStart -1+ incLen ).
+It is not a
+standard GFA line. An `x' line gives a brief summary of each unitig, which can
+be inferred from `S' and `a' lines.
 
 .SH SEE ALSO
 .PP
