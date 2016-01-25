@@ -85,10 +85,13 @@ int asg_arc_del_short(asg_t *g, float drop_ratio)
 	uint32_t v, n_vtx = g->n_seq * 2, n_short = 0;
 	for (v = 0; v < n_vtx; ++v) {
 		asg_arc_t *av = asg_arc_a(g, v);
-		uint32_t i, thres, nv = asg_arc_n(g, v);
+		uint32_t i, thres, max_ml = 0, nv = asg_arc_n(g, v);
 		if (nv < 2) continue;
-		thres = (uint32_t)(av[0].ol * drop_ratio + .499);
-		for (i = nv - 1; i >= 1 && av[i].ol < thres; --i);
+		for (i = 0; i < nv; ++i)
+			max_ml = max_ml > av[i].ml? max_ml : av[i].ml;
+		if (max_ml != av[0].ml) continue;
+		thres = (uint32_t)(av[0].ml * drop_ratio + .499);
+		for (i = nv - 1; i >= 1 && av[i].ml < thres; --i);
 		for (i = i + 1; i < nv; ++i)
 			av[i].del = 1, ++n_short;
 	}

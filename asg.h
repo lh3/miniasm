@@ -8,6 +8,7 @@ typedef struct {
 	uint64_t ul;
 	uint32_t v;
 	uint32_t ol:31, del:1;
+	uint32_t ml;
 } asg_arc_t;
 
 typedef struct {
