@@ -9,6 +9,7 @@ typedef struct {
 	uint32_t v;
 	uint32_t ol:31, del:1;
 	uint32_t ml;
+	float mr;
 } asg_arc_t;
 
 typedef struct {
