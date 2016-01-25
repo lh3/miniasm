@@ -239,20 +239,19 @@ static inline int is_chimeric(const ma_opt_t *opt, size_t st, size_t en, const m
 			}
 		}
 	}
-	if (c[0].n <= opt->min_dp || c[1].n <= opt->min_dp) return 0;
+	if (c[0].n < opt->min_dp || c[1].n < opt->min_dp) return 0;
 	chi[0] = chi[1] = -1;
 	for (k = 0; k < 2; ++k) {
-		int cnt[2];
+		int cnt[2], max = 0;
 		ks_introsort_uint32_t(c[k].n, c[k].a);
 		cnt[0] = cnt[1] = 0;
 		for (i = 0; i < c[k].n; ++i) {
 			++cnt[c[k].a[i]&1];
-			if (cnt[1] > opt->min_dp && cnt[0] < cnt[1]>>1)
-				break;
+			max = max > cnt[1] - cnt[0]? max : cnt[1] - cnt[0];
 		}
-		if (i < c[k].n) chi[k] = c[k].a[i]>>1;
+		if (max >= opt->min_dp) chi[k] = max;
 	}
-	return (chi[0] > 0 && chi[1] > 0);
+	return (chi[0] > 0 || chi[1] > 0);
 }
 
 size_t ma_hit_chimeric(const ma_opt_t *opt, size_t n, const ma_hit_t *a, const sdict_t *d, ma_sub_t *sub)
