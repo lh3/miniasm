@@ -14,6 +14,7 @@ typedef struct {
 	int min_match;
 	int min_dp;
 	float min_iden;
+	float min_coef;
 
 	int max_hang;
 	int min_ovlp;

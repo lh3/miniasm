@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	char *fn_reads = 0, *outfmt = "ug";
 
 	ma_opt_init(&opt);
-	while ((c = getopt(argc, argv, "n:m:s:c:S:i:d:g:o:h:I:r:f:e:p:12VBRbF:")) >= 0) {
+	while ((c = getopt(argc, argv, "n:m:s:c:S:i:d:g:o:h:I:r:f:e:p:12VBRbF:P:")) >= 0) {
 		if (c == 'm') opt.min_match = atoi(optarg);
 		else if (c == 'i') opt.min_iden = atof(optarg);
 		else if (c == 's') opt.min_span = atoi(optarg);
@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 		else if (c == 'B') bi_dir = 1;
 		else if (c == 'b') bi_dir = 0;
 		else if (c == 'R') no_cont = 1;
+		else if (c == 'P') opt.min_coef = atof(optarg);
 		else if (c == 'F') opt.final_ovlp_drop_ratio = atof(optarg);
 		else if (c == 'V') {
 			printf("%s\n", MA_VERSION);
