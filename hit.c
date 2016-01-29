@@ -217,64 +217,6 @@ void ma_sub_merge(size_t n_sub, ma_sub_t *a, const ma_sub_t *b)
 		a[i].e = a[i].s + b[i].e, a[i].s += b[i].s;
 }
 
-static inline int is_chimeric(const ma_opt_t *opt, size_t st, size_t en, const ma_hit_t *a, const ma_sub_t *sub, uint32_v c[2])
-{
-	size_t i;
-	int k, chi[2];
-	c[0].n = c[1].n = 0;
-	for (i = st; i < en; ++i) {
-		const ma_hit_t *h = &a[i];
-		int ql = sub[h->qns>>32].e - sub[h->qns>>32].s, tl = sub[h->tn].e - sub[h->tn].s;
-		int tl5, tl3, ql5 = (uint32_t)h->qns, ql3 = ql - h->qe;
-		tl5 = h->rev? tl - h->te : h->ts;
-		tl3 = h->rev? h->ts : tl - h->te;
-		if (ql5 < opt->max_hang && ql5 < tl5) {
-			if (ql3 > opt->max_hang && tl3 > opt->max_hang) {
-				kv_push(uint32_t, c[0], (ql - h->qe) << 1 | 1);
-			} else if (ql3 > tl3 && tl3 < opt->max_hang) {
-				kv_push(uint32_t, c[0], (ql - h->qe) << 1 | 0);
-			}
-		} else if (ql3 < opt->max_hang && ql3 < tl3) {
-			if (ql5 > opt->max_hang && tl5 > opt->max_hang) {
-				kv_push(uint32_t, c[1], (uint32_t)h->qns << 1 | 1);
-			} else if (ql5 > tl5 && tl5 < opt->max_hang) {
-				kv_push(uint32_t, c[1], (uint32_t)h->qns << 1 | 0);
-			}
-		}
-	}
-	if (c[0].n < opt->min_dp || c[1].n < opt->min_dp) return 0;
-	chi[0] = chi[1] = -1;
-	for (k = 0; k < 2; ++k) {
-		int cnt[2], max = 0;
-		ks_introsort_uint32_t(c[k].n, c[k].a);
-		cnt[0] = cnt[1] = 0;
-		for (i = 0; i < c[k].n; ++i) {
-			++cnt[c[k].a[i]&1];
-			max = max > cnt[1] - cnt[0]? max : cnt[1] - cnt[0];
-		}
-		if (max >= opt->min_dp) chi[k] = max;
-	}
-	return (chi[0] > 0 || chi[1] > 0);
-}
-
-size_t ma_hit_chimeric(const ma_opt_t *opt, size_t n, const ma_hit_t *a, const sdict_t *d, ma_sub_t *sub)
-{
-	size_t i, start = 0, n_chi = 0;
-	uint32_v c[2] = {{0,0,0}, {0,0,0}};
-	for (i = 1; i <= n; ++i) {
-		if (i == n || a[i].qns>>32 != a[start].qns>>32) {
-			if (is_chimeric(opt, start, i, a, sub, c)) {
-				sub[a[start].qns>>32].del = 1;
-				++n_chi;
-			}
-			start = i;
-		}
-	}
-	free(c[0].a); free(c[1].a);
-	if (ma_verbose >= 3) fprintf(stderr, "[M::%s::%s] identified %ld chimeric reads\n", __func__, sys_timestamp(), n_chi);
-	return n_chi;
-}
-
 size_t ma_hit_contained(const ma_opt_t *opt, sdict_t *d, ma_sub_t *sub, size_t n, ma_hit_t *a)
 {
 	int32_t *map, r;
