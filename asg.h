@@ -8,8 +8,6 @@ typedef struct {
 	uint64_t ul;
 	uint32_t v;
 	uint32_t ol:31, del:1;
-	uint32_t ml;
-	float mr;
 } asg_arc_t;
 
 typedef struct {
@@ -36,7 +34,6 @@ void asg_seq_set(asg_t *g, int sid, int len, int del);
 void asg_symm(asg_t *g);
 void asg_cleanup(asg_t *g);
 
-int asg_arc_del_weak(asg_t *g, float min_coef);
 int asg_arc_del_short(asg_t *g, float drop_ratio);
 int asg_arc_del_trans(asg_t *g, int fuzz);
 int asg_cut_tip(asg_t *g, int max_ext);

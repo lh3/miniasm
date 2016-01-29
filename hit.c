@@ -175,9 +175,6 @@ size_t ma_hit_cut(const ma_sub_t *reg, int min_span, size_t n, ma_hit_t *a)
 		ts = (ts > rt->s? ts : rt->s) - rt->s;
 		te = (te < rt->e? te : rt->e) - rt->s;
 		if (qe - qs >= min_span && te - ts >= min_span) {
-			double r = (double)((qe - qs) + (te - ts)) / ((p->qe - (uint32_t)p->qns) + (p->te - p->ts));
-			p->bl = (int)(p->bl * r + .499);
-			p->ml = (int)(p->ml * r + .499);
 			p->qns = p->qns>>32<<32 | qs, p->qe = qe, p->ts = ts, p->te = te;
 			a[m++] = *p;
 		}

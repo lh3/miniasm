@@ -29,7 +29,6 @@ asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, siz
 					g->seq[qn].del = 1;
 				continue;
 			}
-//			if (t.ml * t.mr < opt->min_coef) continue;
 			p = asg_arc_pushp(g);
 			*p = t;
 		} else if (r == MA_HT_QCONT) g->seq[qn].del = 1;
@@ -46,11 +45,11 @@ void ma_sg_print(const asg_t *g, const sdict_t *d, const ma_sub_t *sub, FILE *fp
 		const asg_arc_t *p = &g->arc[i];
 		if (sub) {
 			const ma_sub_t *sq = &sub[p->ul>>33], *st = &sub[p->v>>1];
-			fprintf(fp, "L\t%s:%d-%d\t%c\t%s:%d-%d\t%c\t%dM\tSD:i:%d\tml:i:%d\tmr:f:%.4f\n", d->seq[p->ul>>33].name, sq->s + 1, sq->e, "+-"[p->ul>>32&1],
-					d->seq[p->v>>1].name, st->s + 1, st->e, "+-"[p->v&1], p->ol, (uint32_t)p->ul, p->ml, p->mr);
+			fprintf(fp, "L\t%s:%d-%d\t%c\t%s:%d-%d\t%c\t%dM\tSD:i:%d\n", d->seq[p->ul>>33].name, sq->s + 1, sq->e, "+-"[p->ul>>32&1],
+					d->seq[p->v>>1].name, st->s + 1, st->e, "+-"[p->v&1], p->ol, (uint32_t)p->ul);
 		} else {
-			fprintf(fp, "L\t%s\t%c\t%s\t%c\t%dM\tSD:i:%d\tmr:i:%d\tmr:f:%.4f\n", d->seq[p->ul>>33].name, "+-"[p->ul>>32&1],
-					d->seq[p->v>>1].name, "+-"[p->v&1], p->ol, (uint32_t)p->ul, p->ml, p->mr);
+			fprintf(fp, "L\t%s\t%c\t%s\t%c\t%dM\tSD:i:%d\n", d->seq[p->ul>>33].name, "+-"[p->ul>>32&1],
+					d->seq[p->v>>1].name, "+-"[p->v&1], p->ol, (uint32_t)p->ul);
 		}
 	}
 }
