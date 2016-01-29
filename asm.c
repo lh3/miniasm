@@ -29,7 +29,7 @@ asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, siz
 					g->seq[qn].del = 1;
 				continue;
 			}
-			if (t.ml * t.mr < opt->min_coef) continue;
+//			if (t.ml * t.mr < opt->min_coef) continue;
 			p = asg_arc_pushp(g);
 			*p = t;
 		} else if (r == MA_HT_QCONT) g->seq[qn].del = 1;

@@ -151,6 +151,7 @@ int main(int argc, char *argv[])
 
 		fprintf(stderr, "[M::%s] ===> Step 4: graph cleaning <===\n", __func__);
 		sg = ma_sg_gen(&opt, d, sub, n_hits, hit);
+		if (opt.min_coef > 0) asg_arc_del_weak(sg, opt.min_coef);
 		if (stage >= 6) {
 			fprintf(stderr, "[M::%s] ===> Step 4.1: transitive reduction <===\n", __func__);
 			asg_arc_del_trans(sg, opt.gap_fuzz);
