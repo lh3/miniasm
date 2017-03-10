@@ -168,7 +168,7 @@ regardless of the length of the sequences. This may waste space or hurt
 sensitivity when input sequences vary greatly in lengths.
 
 Minimap is heavily influenced by all these works. It adopts the idea of sketch
-like MHAP but takes minimizers \citep{Roberts:2004fv} as a reduced
+like MHAP but takes minimizers \citep{DBLP:conf/sigmod/SchleimerWA03,Roberts:2004fv} as a reduced
 representation instead; it stores $k$-mers in a hash table like BLAT and MHAP
 but also uses sorting extensively like DALIGNER. In addition, minimap is
 designed not only as a read overlapper but also as a read-to-genome and
@@ -293,7 +293,7 @@ a set of target sequence index, the position of the minimizer and the strand
 (packed into one 64-bit integer).
 
 In implementation, we do not directly insert minimizers to the hash table.
-Instead, we append minimizers to an array and sort the array after collecting
+Instead, we append minimizers to an array of two 64-bit integers (one for minimizer sequence and one for position) and sort the array after collecting
 all minimizers. The hash table keeps the intervals on the sorted array. This
 procedure dramatically reduces heap allocations and cache misses, and is
 supposedly faster than direct hash table insertion.
@@ -453,7 +453,8 @@ $r$ (0.8 by default).}
 For each trimmed mapping, miniasm applies Algorithm~\ref{alg:ovlp} to classify the mapping
 (see also Figure~\ref{fig:overhang} for the explanation of input variables).
 It ignores internal matches, drops contained reads and adds overlaps to the
-assembly graph.
+assembly graph. For a pair of reads, miniasm uses the longest overlap only to
+avoid multi-edges.
 
 
 \subsubsection{Graph cleaning}
@@ -506,7 +507,7 @@ assembly graph.
 \end{algorithm}
 
 After constructing the assembly graph, miniasm removes transitive
-edges~\citep{Myers:2005bh}, trims tips composed on few reads and pops small
+edges~\citep{Myers:2005bh}, trims tipping unitigs composed of few reads (4 by default) and pops small
 bubbles~\citep{Zerbino:2008uq}. Algorithm~\ref{alg:popbub} detects bubbles where the longest path is shorter than $d$ (50kb by default). It is
 adapted from Kahn's topological sorting algorithm~\citep{Kahn62aa}. It starts
 from the potential source and visits a vertex when all its incoming edges are
@@ -534,7 +535,7 @@ $i$ and $j$ inclusive, and $\circ$ is the string concatenation operator.
 
 In a transitively reduced graph, a \emph{unitig}~\citep{Myers:2000kl} is a path $v_1\to
 v_2\to\cdots\to v_k$ such that ${\rm deg}^+(v_i)={\rm deg}^-(v_{i+1})=1$ and i)
-$v_1=v_k$ or ii) ${\rm deg}^-(v_1)\not=1$ and ${\rm deg}^-(v_k)\not=1$.
+$v_1=v_k$ or ii) ${\rm deg}^-(v_1)\not=1$ and ${\rm deg}^+(v_k)\not=1$.
 Its sequence is the sequence spelled from the path. Intuitively, a unitig is a
 maximal path on which adjacent vertices can be ``unambiguously merged'' without
 affecting the connectivity of the original assembly graph.
@@ -632,7 +633,7 @@ unitigs. We extract these reads, map to the true assembly with minimap (option:
 ${\rm utg}_i$ be the unitig name and ${\rm rank}_i$ be its index on ${\rm
 utg}_i$ (i.e. read $i$ is the ${\rm rank}_i$-th read on the unitig).  If two
 reads $i$ and $j$ are mapped adjacently on the true assembly, we say the
-adjacency is $w$-consistent, if (i) ${\rm utg}_i={\rm utg}_j$ and $|{\rm
+adjacency is \emph{$w$-consistent}, if (i) ${\rm utg}_i={\rm utg}_j$ and $|{\rm
 rank}_i-{\rm rank}_j|<w$, or (ii) both read $i$ and $j$ are the first or the
 last $w$ reads of some unitigs. We use $w=5$ to detect large structural
 misassemblies.
@@ -686,21 +687,23 @@ the FASTQ format.}
 We mapped a human PacBio run ``m130928\_232712\_42213\_*.1.*''
 (http://bit.ly/chm1p5c3) with minimap and BWA-MEM~\citep{Li:2013aa}
 against GRCh37 plus decoy sequences (http://bit.ly/GRCh37d5).
-We focused on reads that have one non-chimeric BWA-MEM alignment longer than
-2kb and with mapping quality $\ge$10. We found only 2.0\% of such reads not
-overlapping the best minimap mapping of the same read. The majority of them hit
-to the decoy sequence which is challenging to BWA-MEM. If we exclude hits to
-the decoy, the percentage drops to 0.7\%. On this input, minimap is 50 times
-faster than BWA-MEM, while finding similar best mapping positions.
-This experiment evaluates both the sensitivity and the specificity of minimap:
-if minimap had low sensitivity, it would miss the BWA-MEM mapping completely;
-if minimap had low specificity, its best mapping would often be a wrong
-mapping.
+We started from 23,235 reads (131Mbp), filtered out 7,593 reads (10Mbp) without
+$\ge$2kbp BWA-MEM alignments, and further dropped 815 reads (11Mbp) with two or more
+$\ge$2kbp chimeric alignments and 598 reads (4Mbp) with mapping quality below 10.
+Of the remaining reads, we found only 2.0\% not overlapping the best minimap
+mapping of the same read. The majority of them hit to the decoy sequence where
+defining the true alignment is challenging as decoy is enriched with incomplete
+segments of centromeric repeats. If we exclude hits to the decoy, the
+percentage drops to 0.7\%. On this input, minimap is 50 times faster than
+BWA-MEM, while finding similar best mapping positions.  This experiment
+evaluates both the sensitivity and the specificity of minimap: if minimap had
+low sensitivity, it would miss the BWA-MEM mapping completely; if minimap had
+low specificity, its best mapping would often be a wrong mapping.
 
 To test the sensitivity for read overlapping, we aligned all reads from
 PBcR-PB-ec (Table~\ref{tab:data}) against the reference genome with BWA-MEM,
 extracted reads with mapping quality $\ge$10, and identified $\ge$2kb overlaps
-between the extracted reads based on their positions on the reference genom.
+between the extracted reads based on their positions on the reference genome.
 Minimap finds 93\% of these overlaps. It is more sensitive than MHAP in its
 sensitive mode (78\%) but less than DALIGNER (98\%).
 
@@ -713,8 +716,8 @@ chromosome/plasmid for all but four data sets: 3 extra $>$50kb contigs for
 ERS554120, and 1 extra contig for ERS605484, PBcR-ONT-ec and MAP-006-pcr-1
 each. In the dotter plot between the assembly and the reference genome (similar
 to Figure~\ref{fig:ce}), no large-scale misassemblies are observed.  We also
-applied the method in Section~\ref{sec:eval}. Except ERS473430, the miniasm is
-consistent with the reference assemblies. For ERS473430, the NCTC project page
+applied the method in Section~\ref{sec:eval}. Except ERS473430, the miniasm layouts are
+5-consistent with the reference assemblies. For ERS473430, the NCTC project page
 claimed the sample has a plasmid. Miniasm gives two contigs, but the NCTC
 assembly has one contig only. The difference in layout may be an error in the
 NCTC assembly.
@@ -797,16 +800,17 @@ included an alignment step.
 
 \section{Discussions}
 
-Miniasm confirms long noisy reads can be assembled without
-an error correction stage, and without this stage, the assembly process can be
+Miniasm implements the `O' and `L' steps in the Overlap-Layout-Consensus (OLC)
+assembly paradigm. It confirms long noisy reads can be assembled without an
+error correction stage, and without this stage, the assembly process can be
 greatly accelerated and simplified, while achieving comparable contiguity and
 large-scale accuracy to existing pipelines, at least for genomes without
-excessive repetitive sequences. If we can develop a fast tool to generate
-high-quality contig sequences which miniasm currently lacks, we may be able to
-dramatically speed up the entire assembly pipeline. MinION allows
-users to pause sequencing and reload samples. Fast assembly will not only
-alleviate the computational burden, but also help us to decide if enough data
-have been collected.
+excessive repetitive sequences.  Although without the `C' step, miniasm
+cannot produce high-quality consensus for many analyses, it opens the door
+to ultrafast assembly if we can develop a fast consensus tool matching the
+speed of minimap and miniasm. In addition, MinION has a `read-until' mode,
+allowing users to pause sequencing and reload samples. Fast layout by miniasm
+could already help to decide if enough data have been collected.
 
 Our main concern with miniasm is that when we look at a low-identity match
 between two noisy reads, it is difficult to tell whether the low identity is
@@ -833,8 +837,8 @@ be an important future direction.
 %LASTZ~\citep{harris:2007aa}, LAST~\citep{Kiebasa:2011aa} and GraphMap. They use
 %shorter spaced seeds which greatly help sensitivity at the cost of performance.
 
-Oxford Nanopore is working on PromethIon and PacBio will deliver PacBio Sequel
-next year. Both sequencers promise significantly reduced sequencing cost and
+Oxford Nanopore is working on PromethION and PacBio will ship PacBio Sequel
+later this year. Both sequencers promise significantly reduced sequencing cost and
 increased throughput, which may stimulate the adoption of long-read sequencing
 and subsequently the development of long-read mappers and assemblers. We hope
 in this process, the community could standardize the input and output formats
