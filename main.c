@@ -131,8 +131,12 @@ int main(int argc, char *argv[])
 			ma_sub_t *sub2;
 			sub2 = ma_hit_sub(opt.min_dp, opt.min_iden, opt.min_span/2, n_hits, hit, d->n_seq);
 			n_hits = ma_hit_cut(sub2, opt.min_span, n_hits, hit);
-			ma_sub_merge(d->n_seq, sub, sub2);
-			free(sub2);
+			if (!no_first) {
+				ma_sub_merge(d->n_seq, sub, sub2);
+				free(sub2);
+			} else {
+				sub = sub2;
+			}
 		}
 		if (stage >= 5) n_hits = ma_hit_contained(&opt, d, sub, n_hits, hit);
 	}
