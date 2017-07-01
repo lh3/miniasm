@@ -4,7 +4,7 @@ var re = /(\d+)([MIDSHN])/g;
 
 var len = {}, lineno = 0;
 while (file.readline(buf) >= 0) {
-	var m, line = buf.toString();
+	var m, n_cigar = 0, line = buf.toString();
 	++lineno;
 	if (line.charAt(0) == '@') {
 		if (/^@SQ/.test(line)) {
@@ -19,20 +19,29 @@ while (file.readline(buf) >= 0) {
 	if (t[2] == '*' || (flag&4)) continue;
 	var tlen = len[t[2]];
 	if (tlen == null) throw Error("ERROR at line " + lineno + ": can't find the length of contig " + t[2]);
+	var nn = (m = /\tnn:i:(\d+)/.exec(line)) != null? parseInt(m[1]) : 0;
 	var NM = (m = /\tNM:i:(\d+)/.exec(line)) != null? parseInt(m[1]) : null;
 	if (NM == null) throw Error("ERROR at line " + lineno + ": no NM tag");
-	var clip = [0, 0], I = [0, 0], D = [0, 0], M = 0, N = 0;
+	NM += nn;
+	var clip = [0, 0], I = [0, 0], D = [0, 0], M = 0, N = 0, qlen = 0;
 	while ((m = re.exec(t[5])) != null) {
 		var l = parseInt(m[1]);
-		if (m[2] == 'M') M += l;
-		else if (m[2] == 'I') ++I[0], I[1] += l;
+		if (m[2] == 'M') M += l, qlen += l;
+		else if (m[2] == 'I') ++I[0], I[1] += l, qlen += l;
 		else if (m[2] == 'D') ++D[0], D[1] += l;
 		else if (m[2] == 'N') N += l;
-		else if (m[2] == 'S' || m[2] == 'H')
-			clip[M == 0? 0 : 1] = l;
+		else if (m[2] == 'S') clip[M == 0? 0 : 1] = l, qlen += l;
+		else if (m[2] == 'H') clip[M == 0? 0 : 1] = l;
+		++n_cigar;
+	}
+	if (n_cigar > 65535)
+		warn("WARNING at line " + lineno + ": " + n_cigar + " CIGAR operations");
+	if (t[9] != '*' && t[9].length != qlen) {
+		warn("WARNING at line " + lineno + ": SEQ length inconsistent with CIGAR (" + t[9].length + " != " + qlen + "); skipped");
+		continue;
 	}
 	if (NM < I[1] + D[1]) {
-		warn("WARNING at line " + lineno + ": NM is less than the total number of gaps; skipped");
+		warn("WARNING at line " + lineno + ": NM is less than the total number of gaps (" + NM + " < " + (I[1]+D[1]) + "); skipped");
 		continue;
 	}
 	var extra = ["mm:i:"+(NM-I[1]-D[1]), "io:i:"+I[0], "in:i:"+I[1], "do:i:"+D[0], "dn:i:"+D[1]];
