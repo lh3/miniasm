@@ -23,21 +23,25 @@ while (file.readline(buf) >= 0) {
 	var NM = (m = /\tNM:i:(\d+)/.exec(line)) != null? parseInt(m[1]) : null;
 	if (NM == null) throw Error("ERROR at line " + lineno + ": no NM tag");
 	NM += nn;
-	var clip = [0, 0], I = [0, 0], D = [0, 0], M = 0, N = 0, qlen = 0;
+	var clip = [0, 0], I = [0, 0], D = [0, 0], M = 0, N = 0, ql = 0, tl = 0;
 	while ((m = re.exec(t[5])) != null) {
 		var l = parseInt(m[1]);
-		if (m[2] == 'M') M += l, qlen += l;
-		else if (m[2] == 'I') ++I[0], I[1] += l, qlen += l;
-		else if (m[2] == 'D') ++D[0], D[1] += l;
-		else if (m[2] == 'N') N += l;
-		else if (m[2] == 'S') clip[M == 0? 0 : 1] = l, qlen += l;
+		if (m[2] == 'M') M += l, ql += l, tl += l;
+		else if (m[2] == 'I') ++I[0], I[1] += l, ql += l;
+		else if (m[2] == 'D') ++D[0], D[1] += l, tl += l;
+		else if (m[2] == 'N') N += l, tl += l;
+		else if (m[2] == 'S') clip[M == 0? 0 : 1] = l, ql += l;
 		else if (m[2] == 'H') clip[M == 0? 0 : 1] = l;
 		++n_cigar;
 	}
 	if (n_cigar > 65535)
 		warn("WARNING at line " + lineno + ": " + n_cigar + " CIGAR operations");
-	if (t[9] != '*' && t[9].length != qlen) {
-		warn("WARNING at line " + lineno + ": SEQ length inconsistent with CIGAR (" + t[9].length + " != " + qlen + "); skipped");
+	if (tl + parseInt(t[3]) - 1 > tlen) {
+		warn("WARNING at line " + lineno + ": alignment end position larger than ref length; skipped");
+		continue;
+	}
+	if (t[9] != '*' && t[9].length != ql) {
+		warn("WARNING at line " + lineno + ": SEQ length inconsistent with CIGAR (" + t[9].length + " != " + ql + "); skipped");
 		continue;
 	}
 	if (NM < I[1] + D[1]) {
