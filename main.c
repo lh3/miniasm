@@ -8,7 +8,7 @@
 #include "sdict.h"
 #include "miniasm.h"
 
-#define MA_VERSION "0.2-r159-dirty"
+#define MA_VERSION "0.2-r166-dirty"
 
 static void print_subs(const sdict_t *d, const ma_sub_t *sub)
 {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 		print_subs(d, sub);
 	} else if (strcmp(outfmt, "paf") == 0) {
 		print_hits(n_hits, hit, d, sub);
-	} if (strcmp(outfmt, "ug") == 0 || strcmp(outfmt, "sg") == 0) {
+	} else if (strcmp(outfmt, "ug") == 0 || strcmp(outfmt, "sg") == 0) {
 		asg_t *sg = 0;
 		ma_ug_t *ug = 0;
 
