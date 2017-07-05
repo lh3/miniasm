@@ -38,7 +38,7 @@ asg_t *ma_sg_gen(const ma_opt_t *opt, const sdict_t *d, const ma_sub_t *sub, siz
 	return g;
 }
 
-void ma_sg_print_L(const asg_t *g, const sdict_t *d, const ma_sub_t *sub, FILE *fp)
+void ma_sg_print(const asg_t *g, const sdict_t *d, const ma_sub_t *sub, FILE *fp)
 {
 	uint32_t i;
 	for (i = 0; i < g->n_arc; ++i) {
