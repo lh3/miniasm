@@ -1,4 +1,46 @@
-var file = arguments.length? new File(arguments[0]) : new File();
+var getopt = function(args, ostr) {
+	var oli; // option letter list index
+	if (typeof(getopt.place) == 'undefined')
+		getopt.ind = 0, getopt.arg = null, getopt.place = -1;
+	if (getopt.place == -1) { // update scanning pointer
+		if (getopt.ind >= args.length || args[getopt.ind].charAt(getopt.place = 0) != '-') {
+			getopt.place = -1;
+			return null;
+		}
+		if (getopt.place + 1 < args[getopt.ind].length && args[getopt.ind].charAt(++getopt.place) == '-') { // found "--"
+			++getopt.ind;
+			getopt.place = -1;
+			return null;
+		}
+	}
+	var optopt = args[getopt.ind].charAt(getopt.place++); // character checked for validity
+	if (optopt == ':' || (oli = ostr.indexOf(optopt)) < 0) {
+		if (optopt == '-') return null; //  if the user didn't specify '-' as an option, assume it means null.
+		if (getopt.place < 0) ++getopt.ind;
+		return '?';
+	}
+	if (oli+1 >= ostr.length || ostr.charAt(++oli) != ':') { // don't need argument
+		getopt.arg = null;
+		if (getopt.place < 0 || getopt.place >= args[getopt.ind].length) ++getopt.ind, getopt.place = -1;
+	} else { // need an argument
+		if (getopt.place >= 0 && getopt.place < args[getopt.ind].length)
+			getopt.arg = args[getopt.ind].substr(getopt.place);
+		else if (args.length <= ++getopt.ind) { // no arg
+			getopt.place = -1;
+			if (ostr.length > 0 && ostr.charAt(0) == ':') return ':';
+			return '?';
+		} else getopt.arg = args[getopt.ind]; // white space
+		getopt.place = -1;
+		++getopt.ind;
+	}
+	return optopt;
+}
+
+var c, pri_only = false;
+while ((c = getopt(arguments, "p")) != null)
+	if (c == 'p') pri_only = true;
+
+var file = arguments.length == getopt.ind? new File() : new File(arguments[getopt.ind]);
 var buf = new Bytes();
 var re = /(\d+)([MIDSHNX=])/g;
 
@@ -17,6 +59,7 @@ while (file.readline(buf) >= 0) {
 	var t = line.split("\t");
 	var flag = parseInt(t[1]);
 	if (t[2] == '*' || (flag&4)) continue;
+	if (pri_only && (flag&0x100)) continue;
 	var tlen = len[t[2]];
 	if (tlen == null) throw Error("ERROR at line " + lineno + ": can't find the length of contig " + t[2]);
 	var nn = (m = /\tnn:i:(\d+)/.exec(line)) != null? parseInt(m[1]) : 0;
