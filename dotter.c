@@ -91,6 +91,10 @@ int main(int argc, char *argv[])
 	d[1] = sd_init();
 
 	f = paf_open(argv[optind]);
+	if (!f) {
+		fprintf(stderr, "[E::%s] could not open PAF file %s\n", __func__, argv[optind]);
+		return 1;
+	}
 	while (paf_read(f, &r) >= 0) {
 		dt_hit_t *s;
 		if (r.qe - r.qs < min_span || r.te - r.ts < min_span || r.ml < min_match) continue;
