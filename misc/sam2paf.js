@@ -58,6 +58,7 @@ while (file.readline(buf) >= 0) {
 	}
 	var t = line.split("\t");
 	var flag = parseInt(t[1]);
+	if (t[9] != '*' && t[10] != '*' && t[9].length != t[10].length) throw Error("ERROR at line " + lineno + ": inconsistent SEQ and QUAL lengths - " + t[9].length + " != " + t[10].length);
 	if (t[2] == '*' || (flag&4)) continue;
 	if (pri_only && (flag&0x100)) continue;
 	var tlen = len[t[2]];
