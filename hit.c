@@ -42,6 +42,10 @@ sdict_t *ma_hit_no_cont(const char *fn, int min_span, int min_match, int max_han
 	sdict_t *d;
 
 	fp = paf_open(fn);
+	if (!fp) {
+		fprintf(stderr, "[E::%s] could not open PAF file %s\n", __func__, fn);
+		exit(1);
+	}
 	d = sd_init();
 	while (paf_read(fp, &r) >= 0) {
 		int l5, l3;
@@ -71,6 +75,10 @@ ma_hit_t *ma_hit_read(const char *fn, int min_span, int min_match, sdict_t *d, s
 	size_t i, tot = 0, tot_len = 0;
 
 	fp = paf_open(fn);
+	if (!fp) {
+		fprintf(stderr, "[E::%s] could not open PAF file %s\n", __func__, fn);
+		exit(1);
+	}
 	while (paf_read(fp, &r) >= 0) {
 		ma_hit_t *p;
 		++tot;
