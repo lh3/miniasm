@@ -100,14 +100,14 @@ int main(int argc, char *argv[])
 		if (r.qe - r.qs < min_span || r.te - r.ts < min_span || r.ml < min_match) continue;
 		if (r.ml < r.bl * min_iden) continue;
 		kv_pushp(dt_hit_t, h, &s);
-		s->qn = sd_put(d[0], r.qn, r.ql), s->qs = r.qs, s->qe = r.qe;
-		s->tn = sd_put(d[1], r.tn, r.tl);
+		s->qn = sd_put(d[1], r.qn, r.ql), s->qs = r.qs, s->qe = r.qe;
+		s->tn = sd_put(d[0], r.tn, r.tl);
 		s->ts = r.rev? r.te : r.ts, s->te = r.rev? r.ts : r.te;
 		s->ml = r.ml;
 	}
 	paf_close(f);
 
-	for (i = 0; i < 2; ++i) {
+	for (i = 0; i < 2; ++i) { // 0 for target; 1 for query
 		uint32_t n = d[i]->n_seq;
 		uint64_t l = 0;
 		a[i] = (srtaux_t*)calloc(n + 1, sizeof(srtaux_t));
@@ -117,22 +117,17 @@ int main(int argc, char *argv[])
 			ks_introsort_dtx(n, a[i]);
 		} else {
 			srtaux_t *b = a[i];
-			uint32_t *inv;
-			inv = (uint32_t*)calloc(d[0]->n_seq, 4);
-			for (j = 0; j < d[0]->n_seq; ++j)
-				inv[a[0][j].i] = j;
 			for (j = 0; j < n; ++j)
 				b[j].name = d[i]->seq[j].name, b[j].tot = b[j].w = 0, b[j].i = j;
 			for (j = 0; j < h.n; ++j) {
 				uint64_t w, coor;
 				dt_hit_t *p = &h.a[j];
-				srtaux_t *q = &b[p->tn];
-				coor = acclen[0][inv[p->qn]] + (p->qs + p->qe) / 2;
+				srtaux_t *q = &b[p->qn];
+				coor = acclen[0][p->tn] + (p->ts + p->te) / 2;
 				w = (uint64_t)(.01 * p->ml * p->ml + .499);
 				q->tot += (double)coor * w;
 				q->w += w;
 			}
-			free(inv);
 			for (j = 0; j < n; ++j) b[j].tot /= b[j].w;
 			ks_introsort_dty(n, b);
 		}
@@ -179,11 +174,11 @@ int main(int argc, char *argv[])
 		for (i = 0; i < h.n; ++i) {
 			dt_hit_t *p = &h.a[i];
 			double x0, y0, x1, y1;
-			uint64_t xo = acclen[0][p->qn], yo = acclen[1][p->tn];
+			uint64_t xo = acclen[0][p->tn], yo = acclen[1][p->qn];
 			if (j == 0 && p->ts > p->te) continue;
 			if (j == 1 && p->ts < p->te) continue;
-			x0 = (p->qs + xo) * sx, y0 = (p->ts + yo) * sy;
-			x1 = (p->qe + xo) * sx, y1 = (p->te + yo) * sy;
+			x0 = (p->ts + xo) * sx, y0 = (p->qs + yo) * sy;
+			x1 = (p->te + xo) * sx, y1 = (p->qe + yo) * sy;
 			eps_line(stdout, x0, y0, x1, y1);
 		}
 		eps_stroke(stdout);
