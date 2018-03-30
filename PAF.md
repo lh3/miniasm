@@ -22,7 +22,7 @@ following predefined fields:
 If PAF is generated from an alignment, column 10 equals the number of sequence
 matches, and column 11 equals the total number of sequence matches, mismatches,
 insertions and deletions in the alignment. If alignment is not available,
-column 10 and 11 are still required but can be approximate.
+column 10 and 11 are still required but may be highly inaccurate.
 
 A PAF file may optionally contain SAM-like typed key-value pairs at the end of
 each line.
