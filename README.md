@@ -1,5 +1,3 @@
-*Warning: since r104, miniasm only works with minimap-r122 or later*
-
 ## Getting Started
 
 ```sh
@@ -7,10 +5,10 @@
 wget -O- http://www.cbcb.umd.edu/software/PBcR/data/selfSampleData.tar.gz | tar zxf -
 ln -s selfSampleData/pacbio_filtered.fastq reads.fq
 # Install minimap and miniasm (requiring gcc and zlib)
-git clone https://github.com/lh3/minimap && (cd minimap && make)
-git clone https://github.com/lh3/miniasm && (cd miniasm && make)
-# Overlap
-minimap/minimap -Sw5 -L100 -m0 -t8 reads.fq reads.fq | gzip -1 > reads.paf.gz
+git clone https://github.com/lh3/minimap2 && (cd minimap2 && make)
+git clone https://github.com/lh3/miniasm  && (cd miniasm  && make)
+# Overlap for PacBio reads (or use "-x map-ont" for nanopore read overlapping)
+minimap2/minimap2 -x map-pb -t8 pb-reads.fq pb-reads.fq | gzip -1 > reads.paf.gz
 # Layout
 miniasm/miniasm -f reads.fq reads.paf.gz > reads.gfa
 ```
