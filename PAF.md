@@ -8,8 +8,8 @@ following predefined fields:
 |--:|:----:|:-----------------------------------------|
 |1  |string|Query sequence name                       |
 |2  |int   |Query sequence length                     |
-|3  |int   |Query start (0-based)                     |
-|4  |int   |Query end (0-based)                       |
+|3  |int   |Query start (0-based; BED-like; closed)   |
+|4  |int   |Query end (0-based; BED-like; open)       |
 |5  |char  |Relative strand: "+" or "-"               |
 |6  |string|Target sequence name                      |
 |7  |int   |Target sequence length                    |
