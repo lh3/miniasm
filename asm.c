@@ -82,6 +82,10 @@ void ma_ug_print(const ma_ug_t *ug, const sdict_t *d, const ma_sub_t *sub, FILE 
 		ma_utg_t *p = &ug->u.a[i];
 		sprintf(name, "utg%.6d%c", i + 1, "lc"[p->circ]);
 		fprintf(fp, "S\t%s\t%s\tLN:i:%d\n", name, p->s? p->s : "*", p->len);
+		if (p->circ) {  // make circularising links (both forward and reverse directions) for circular unitigs
+			fprintf(fp, "L\t%s\t+\t%s\t+\t0M\n", name, name);
+			fprintf(fp, "L\t%s\t-\t%s\t-\t0M\n", name, name);
+		}
 		for (j = l = 0; j < p->n; l += (uint32_t)p->a[j++]) {
 			uint32_t x = p->a[j]>>33;
 			if (sub) fprintf(fp, "a\t%s\t%d\t%s:%d-%d\t%c\t%d\n", name, l, d->seq[x].name, sub[x].s + 1, sub[x].e, "+-"[p->a[j]>>32&1], (uint32_t)p->a[j]);
