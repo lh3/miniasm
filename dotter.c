@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 		else if (c == 'w') width = atoi(optarg);
 		else if (c == 'f') font_size = atoi(optarg);
 		else if (c == 'L') no_label = 1;
-		else if (c == 'd') diagonal = 0;
+		else if (c == 'D') diagonal = 0;
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: minidot [options] <in.paf>\n");
