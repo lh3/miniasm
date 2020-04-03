@@ -240,8 +240,12 @@ int ma_ug_seq(ma_ug_t *g, const sdict_t *d, const ma_sub_t *sub, const char *fn)
 	utg_intv_t *tmp;
 	uint32_t i, j;
 
-	fp = fn && strcmp(fn, "-")? gzopen(fn, "r") : gzdopen(fileno(stdin), "r");
-	if (fp == 0) return -1;
+	if (!fn) return -1;
+	fp = strcmp(fn, "-")? gzopen(fn, "r") : gzdopen(fileno(stdin), "r");
+	if (!fp) {
+		fprintf(stderr, "[W::%s] could not open read file %s\n", __func__, fn);
+		return -1;
+	}
 	ks = kseq_init(fp);
 
 	tmp = (utg_intv_t*)calloc(d->n_seq, sizeof(utg_intv_t));
