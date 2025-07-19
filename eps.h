@@ -32,6 +32,7 @@
 #define eps_color(fp,col) fprintf(fp,"stroke %d C\n",col)
 #define eps_gray(fp,gray) fprintf(fp, "%g setgray\n",(float)gray)
 #define eps_linewidth(fp, lw) fprintf(fp, "%g setlinewidth\n", (float)(lw))
+#define eps_linecap(fp, lc) fprintf(fp, "%d setlinecap\n", (lc))
 #define eps_line(fp,x1,y1,x2,y2) fprintf(fp,"%g %g %g %g L\n",(float)(x1),(float)(y1),(float)(x2),(float)(y2))
 #define eps_linex(fp,x1,x2,y) fprintf(fp,"%g %g %g LX\n",(float)(x1),(float)(x2),(float)(y))
 #define eps_liney(fp,y1,y2,x) fprintf(fp,"%g %g %g LY\n",(float)(y1),(float)(y2),(float)(x))

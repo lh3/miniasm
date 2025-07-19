@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 {
 	int min_span = 1000, min_match = 100, width = 600, height, diagonal = 1;
 	int color[2] = { 0xFF0000, 0x0080FF }, font_size = 11, no_label = 0;
-	float min_iden = .1;
+	float min_iden = .1, lw = 3.0f;
 	paf_file_t *f;
 	sdict_t *d[2];
 	paf_rec_t r;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	kvec_t(dt_hit_t) h = {0,0,0};
 	double sx, sy;
 
-	while ((c = getopt(argc, argv, "m:i:s:w:f:Ld")) >= 0) {
+	while ((c = getopt(argc, argv, "m:i:s:w:f:Ldt:")) >= 0) {
 		if (c == 'm') min_match = atoi(optarg);
 		else if (c == 'i') min_iden = atof(optarg);
 		else if (c == 's') min_span = atoi(optarg);
@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
 		else if (c == 'f') font_size = atoi(optarg);
 		else if (c == 'L') no_label = 1;
 		else if (c == 'd') diagonal = 0;
+		else if (c == 't') lw = atof(optarg);
 	}
 	if (argc == optind) {
 		fprintf(stderr, "Usage: minidot [options] <in.paf>\n");
@@ -82,8 +83,9 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "  -s INT      min span [%d]\n", min_span);
 		fprintf(stderr, "  -w INT      image width [%d]\n", width);
 		fprintf(stderr, "  -f INT      font size [%d]\n", font_size);
+		fprintf(stderr, "  -t FLOAT    line width [%g]\n", lw);
 		fprintf(stderr, "  -L          don't print labels\n");
-		fprintf(stderr, "  -D          don't try to put hits onto the diagonal\n");
+		fprintf(stderr, "  -d          don't try to put hits onto the diagonal\n");
 		return 1;
 	}
 
@@ -168,7 +170,8 @@ int main(int argc, char *argv[])
 	eps_stroke(stdout);
 
 	// write hits
-	eps_linewidth(stdout, .1);
+	eps_linewidth(stdout, lw);
+	eps_linecap(stdout, 1);
 	for (j = 0; j < 2; ++j) {
 		eps_color(stdout, color[j]);
 		for (i = 0; i < h.n; ++i) {
